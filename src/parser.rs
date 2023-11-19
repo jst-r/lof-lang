@@ -107,10 +107,14 @@ impl Parser {
         self.equality()
     }
 
+    fn assignment(&mut self) -> ExprResult {
+        todo!()
+    }
+
     fn equality(&mut self) -> ExprResult {
         let mut expr = self.comparison()?;
 
-        while self.matches(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
+        while self.matches([TokenKind::BangEqual, TokenKind::EqualEqual]) {
             let operator = self.previous().clone();
             let right = self.comparison()?;
 
@@ -127,7 +131,7 @@ impl Parser {
     fn comparison(&mut self) -> ExprResult {
         let mut expr = self.term()?;
 
-        while self.matches(&[
+        while self.matches([
             TokenKind::Less,
             TokenKind::LessEqual,
             TokenKind::Greater,
@@ -148,7 +152,7 @@ impl Parser {
     fn term(&mut self) -> ExprResult {
         let mut expr = self.factor()?;
 
-        while self.matches(&[TokenKind::Plus, TokenKind::Minus]) {
+        while self.matches([TokenKind::Plus, TokenKind::Minus]) {
             let operator = self.previous().clone();
             let right = self.factor()?;
             expr = Box::new(Expr::Binary {
@@ -164,7 +168,7 @@ impl Parser {
     fn factor(&mut self) -> ExprResult {
         let mut expr = self.unary()?;
 
-        while self.matches(&[TokenKind::Star, TokenKind::Slash]) {
+        while self.matches([TokenKind::Star, TokenKind::Slash]) {
             let operator = self.previous().clone();
             let right = self.unary()?;
             expr = Box::new(Expr::Binary {
@@ -178,7 +182,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> ExprResult {
-        if self.matches(&[TokenKind::Bang, TokenKind::Minus]) {
+        if self.matches([TokenKind::Bang, TokenKind::Minus]) {
             let operator = self.previous().clone();
             let right = self.unary()?;
             wrap_expr(Expr::Unary { operator, right })
@@ -188,12 +192,12 @@ impl Parser {
     }
 
     fn primary(&mut self) -> ExprResult {
-        if self.matches(&[TokenKind::Identifier]) {
+        if self.matches([TokenKind::Identifier]) {
             let prev = self.previous();
             return wrap_expr(Expr::Variable(prev.clone()));
         }
 
-        if self.matches(&[TokenKind::Literal]) {
+        if self.matches([TokenKind::Literal]) {
             let prev = self.previous();
             let literal_expr = match prev.literal.clone() {
                 LiteralValue::String(s) => Ok(Expr::Literal(LiteralExpr::String(s.into()))),
@@ -204,7 +208,7 @@ impl Parser {
             return wrap_expr(literal_expr);
         }
 
-        if self.matches(&[TokenKind::True, TokenKind::False]) {
+        if self.matches([TokenKind::True, TokenKind::False]) {
             let literal_expr = match self.previous().kind {
                 TokenKind::True => Ok(Expr::Literal(LiteralExpr::Bool(true))),
                 TokenKind::False => Ok(Expr::Literal(LiteralExpr::Bool(false))),
@@ -213,7 +217,7 @@ impl Parser {
             return wrap_expr(literal_expr);
         }
 
-        if self.matches(&[TokenKind::LeftParen]) {
+        if self.matches([TokenKind::LeftParen]) {
             let expr = self.expression()?;
             if self.advance().kind != TokenKind::RightParen {
                 return Err(ParserError::ParenthesisNotClosed(self.previous().clone()));
@@ -224,9 +228,9 @@ impl Parser {
         Err(ParserError::UnexpectedToken(self.peek().clone()))
     }
 
-    fn matches(&mut self, kinds: &[TokenKind]) -> bool {
+    fn matches<const N: usize>(&mut self, kinds: [TokenKind; N]) -> bool {
         for kind in kinds {
-            if self.check(*kind) {
+            if self.check(kind) {
                 self.advance();
                 return true;
             }

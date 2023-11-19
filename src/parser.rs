@@ -55,7 +55,7 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> StmtResult {
-        if self.matches(&[TokenKind::Var]) {
+        if self.matches([TokenKind::Var]) {
             Ok(self.var_declaration()?)
         } else {
             Ok(self.statement()?)
@@ -70,7 +70,7 @@ impl Parser {
             )?
             .clone();
 
-        let initializer = if self.matches(&[TokenKind::Equal]) {
+        let initializer = if self.matches([TokenKind::Equal]) {
             Some(self.expression()?)
         } else {
             None
@@ -82,7 +82,7 @@ impl Parser {
     }
 
     fn statement(&mut self) -> StmtResult {
-        if self.matches(&[TokenKind::Print]) {
+        if self.matches([TokenKind::Print]) {
             self.print_statement()
         } else {
             self.expression_statement()

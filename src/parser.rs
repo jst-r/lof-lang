@@ -42,9 +42,11 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<StmtResult> {
         let mut statements = vec![];
         while !self.is_at_end() {
-            statements.push(self.declaration());
-            dbg!(&statements);
-            dbg!(self.peek());
+            let stmt = self.declaration();
+            if stmt.is_err() {
+                self.synchronize();
+            }
+            statements.push(stmt);
         }
 
         statements
@@ -244,9 +246,8 @@ impl Parser {
     }
 
     fn consume(&mut self, token: TokenKind, error: ParserError) -> Result<&Token, ParserError> {
-        let tok = self.advance();
         if self.check(token) {
-            Ok(tok)
+            Ok(self.advance())
         } else {
             Err(error)
         }
@@ -262,6 +263,28 @@ impl Parser {
 
     fn is_at_end(&self) -> bool {
         self.peek().kind == TokenKind::Eof
+    }
+
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().kind == TokenKind::Semicolon {
+                return;
+            }
+            match self.peek().kind {
+                TokenKind::Class
+                | TokenKind::Fn
+                | TokenKind::Var
+                | TokenKind::For
+                | TokenKind::If
+                | TokenKind::While
+                | TokenKind::Print
+                | TokenKind::Return => return,
+                _ => {}
+            }
+            self.advance();
+        }
     }
 
     fn err_missing_semi(&self) -> ParserError {

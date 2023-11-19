@@ -1,9 +1,6 @@
 use std::{fmt::Debug, rc::Rc};
 
-use crate::{
-    token::Token,
-    visitor::{Accept, AcceptMut},
-};
+use crate::{token::Token, visitor::AcceptMut};
 
 pub type BoxExpr = Box<Expr>;
 

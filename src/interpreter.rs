@@ -18,34 +18,69 @@ pub enum RuntimeValue {
 
 use RuntimeValue::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Environment {
-    values: BTreeMap<Rc<str>, RuntimeValue>,
+    current_id: usize,
+    max_id: usize,
+    enclosing_ids: Vec<Option<usize>>,
+    value_scopes: Vec<BTreeMap<Rc<str>, RuntimeValue>>,
+}
+
+impl Default for Environment {
+    fn default() -> Self {
+        Self {
+            current_id: 0,
+            max_id: 0,
+            enclosing_ids: vec![None],
+            value_scopes: vec![BTreeMap::new()],
+        }
+    }
 }
 
 impl Environment {
     fn define(&mut self, name: Rc<str>, value: RuntimeValue) {
-        self.values.insert(name, value);
+        self.value_scopes[self.current_id].insert(name, value);
     }
 
     fn get(&self, name: &Token) -> Option<&RuntimeValue> {
-        self.values.get(&name.lexeme)
+        let mut id = self.current_id;
+
+        loop {
+            if let Some(val) = self.value_scopes[id].get(&name.lexeme) {
+                return Some(val);
+            } else if let Some(new_id) = self.enclosing_ids[id] {
+                id = new_id;
+                continue;
+            } else {
+                return None;
+            }
+        }
     }
 
     fn assign(&mut self, name: Token, value: RuntimeValue) -> RuntimeValue {
+        let mut id = self.current_id;
         let key = &name.lexeme;
-        match self.values.get(key) {
-            Some(prev) => match (prev, &value) {
-                (String(_), String(_))
-                | (Integer(_), Integer(_))
-                | (Bool(_), Bool(_))
-                | (Unit, Unit) => self.values.insert(key.clone(), value.clone()),
-                _ => panic!("type error"),
-            },
-            None => panic!("undefined variable"),
-        };
 
-        value
+        loop {
+            if let Some(prev) = self.value_scopes[id].get(&name.lexeme) {
+                match (prev, &value) {
+                    (String(_), String(_))
+                    | (Integer(_), Integer(_))
+                    | (Bool(_), Bool(_))
+                    | (Unit, Unit) => {
+                        self.value_scopes[id].insert(key.clone(), value.clone());
+                    }
+                    _ => panic!("type error"),
+                };
+
+                return value;
+            } else if let Some(new_id) = self.enclosing_ids[id] {
+                id = new_id;
+                continue;
+            } else {
+                panic!("undefined variable");
+            }
+        }
     }
 }
 

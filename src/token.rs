@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TokenKind {
     // One character
     LeftParen,
@@ -48,7 +48,7 @@ pub enum TokenKind {
     Eof,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum LiteralValue {
     None,
     Integer(isize),
@@ -56,7 +56,7 @@ pub enum LiteralValue {
     String(Rc<str>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct TokenStruct {
     pub kind: TokenKind,
     pub lexeme: Rc<str>,

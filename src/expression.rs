@@ -1,6 +1,9 @@
 use std::{fmt::Debug, rc::Rc};
 
-use crate::{token::Token, visitor::Accept};
+use crate::{
+    token::Token,
+    visitor::{Accept, AcceptMut},
+};
 
 pub type BoxExpr = Box<Expr>;
 
@@ -18,6 +21,10 @@ pub enum Expr {
     Literal(LiteralExpr),
     Group(BoxExpr),
     Variable(Token),
+    Assignment {
+        name: Token,
+        value: BoxExpr,
+    },
 }
 
 #[derive(Debug)]
@@ -36,13 +43,14 @@ where
 {
     type ReturnType;
 
-    fn visit_binary(&self, left: BoxExpr, operator: Token, right: BoxExpr) -> Self::ReturnType;
-    fn visit_unary(&self, operator: Token, right: BoxExpr) -> Self::ReturnType;
-    fn visit_literal(&self, literal: LiteralExpr) -> Self::ReturnType;
-    fn visit_group(&self, expr: BoxExpr) -> Self::ReturnType;
-    fn visit_variable(&self, token: Token) -> Self::ReturnType;
+    fn visit_binary(&mut self, left: BoxExpr, operator: Token, right: BoxExpr) -> Self::ReturnType;
+    fn visit_unary(&mut self, operator: Token, right: BoxExpr) -> Self::ReturnType;
+    fn visit_literal(&mut self, literal: LiteralExpr) -> Self::ReturnType;
+    fn visit_group(&mut self, expr: BoxExpr) -> Self::ReturnType;
+    fn visit_variable(&mut self, token: Token) -> Self::ReturnType;
+    fn visit_assignment(&mut self, name: Token, value: BoxExpr) -> Self::ReturnType;
 
-    fn visit(&self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit(&mut self, expr: BoxExpr) -> Self::ReturnType {
         match *expr {
             Expr::Binary {
                 left,
@@ -53,12 +61,13 @@ where
             Expr::Literal(literal) => self.visit_literal(literal),
             Expr::Group(expr) => self.visit_group(expr),
             Expr::Variable(token) => self.visit_variable(token),
+            Expr::Assignment { name, value } => self.visit_assignment(name, value),
         }
     }
 }
 
-impl<V: ExprVisitor> Accept<V, V::ReturnType> for BoxExpr {
-    fn accept(self, visitor: &V) -> V::ReturnType {
+impl<V: ExprVisitor> AcceptMut<V, V::ReturnType> for BoxExpr {
+    fn accept(self, visitor: &mut V) -> V::ReturnType {
         visitor.visit(self)
     }
 }

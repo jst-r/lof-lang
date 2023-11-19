@@ -13,8 +13,8 @@ pub enum Stmt {
 pub trait StmtVisitor {
     type ReturnType;
 
-    fn visit_print(&self, expr: BoxExpr) -> Self::ReturnType;
-    fn visit_expr(&self, expr: BoxExpr) -> Self::ReturnType;
+    fn visit_print(&mut self, expr: BoxExpr) -> Self::ReturnType;
+    fn visit_expr(&mut self, expr: BoxExpr) -> Self::ReturnType;
     fn visit_var(&mut self, name: Token, initializer: Option<BoxExpr>) -> Self::ReturnType;
 
     fn visit(&mut self, stmt: Stmt) -> Self::ReturnType {

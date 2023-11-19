@@ -4,7 +4,7 @@ use crate::{
     expression::{BoxExpr, ExprVisitor, LiteralExpr},
     statement::StmtVisitor,
     token::{Token, TokenKind},
-    visitor::{Accept, AcceptMut},
+    visitor::AcceptMut,
 };
 
 #[derive(Debug, Clone)]
@@ -30,6 +30,22 @@ impl Environment {
 
     fn get(&self, name: &Token) -> Option<&RuntimeValue> {
         self.values.get(&name.lexeme)
+    }
+
+    fn assign(&mut self, name: Token, value: RuntimeValue) -> RuntimeValue {
+        let key = &name.lexeme;
+        match self.values.get(key) {
+            Some(prev) => match (prev, &value) {
+                (String(_), String(_))
+                | (Integer(_), Integer(_))
+                | (Bool(_), Bool(_))
+                | (Unit, Unit) => self.values.insert(key.clone(), value.clone()),
+                _ => panic!("type error"),
+            },
+            None => panic!("undefined variable"),
+        };
+
+        value
     }
 }
 
@@ -152,7 +168,7 @@ impl Interpreter {
 impl ExprVisitor for Interpreter {
     type ReturnType = RuntimeValue;
 
-    fn visit_binary(&self, left: BoxExpr, operator: Token, right: BoxExpr) -> Self::ReturnType {
+    fn visit_binary(&mut self, left: BoxExpr, operator: Token, right: BoxExpr) -> Self::ReturnType {
         let left = left.accept(self);
         let right = right.accept(self);
 
@@ -171,7 +187,7 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_unary(&self, operator: Token, right: BoxExpr) -> Self::ReturnType {
+    fn visit_unary(&mut self, operator: Token, right: BoxExpr) -> Self::ReturnType {
         let right = right.accept(self);
 
         match operator.kind {
@@ -181,7 +197,7 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_literal(&self, literal: LiteralExpr) -> Self::ReturnType {
+    fn visit_literal(&mut self, literal: LiteralExpr) -> Self::ReturnType {
         match literal {
             LiteralExpr::Bool(b) => Bool(b),
             LiteralExpr::Integer(n) => Integer(n),
@@ -190,40 +206,40 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_group(&self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit_group(&mut self, expr: BoxExpr) -> Self::ReturnType {
         expr.accept(self)
     }
 
-    fn visit_variable(&self, token: Token) -> Self::ReturnType {
-        dbg!(&self);
-        dbg!(&token);
+    fn visit_variable(&mut self, token: Token) -> Self::ReturnType {
         match self.environment.get(&token) {
             Some(t) => t.clone(),
             Option::None => panic!("undefined variable"),
         }
+    }
+
+    fn visit_assignment(&mut self, name: Token, value: BoxExpr) -> Self::ReturnType {
+        let value = value.accept(self);
+
+        self.environment.assign(name, value)
     }
 }
 
 impl StmtVisitor for Interpreter {
     type ReturnType = ();
 
-    fn visit_print(&self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit_print(&mut self, expr: BoxExpr) -> Self::ReturnType {
         println!("{:?}", expr.accept(self))
     }
 
-    fn visit_expr(&self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit_expr(&mut self, expr: BoxExpr) -> Self::ReturnType {
         expr.accept(self);
     }
 
     fn visit_var(&mut self, name: Token, initializer: Option<BoxExpr>) -> Self::ReturnType {
-        dbg!(&name);
-        self.environment.define(
-            name.lexeme.clone(),
-            match initializer {
-                Some(init) => init.accept(self),
-                Option::None => Unit,
-            },
-        );
-        dbg!(&self);
+        let value = match initializer {
+            Some(init) => init.accept(self),
+            Option::None => Unit,
+        };
+        self.environment.define(name.lexeme.clone(), value);
     }
 }

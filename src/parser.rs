@@ -20,6 +20,8 @@ pub enum ParserError {
     InvalidVariableName(Token),
     #[error("invalid literal {0:?}")]
     InvalidLiteral(Token),
+    #[error("invalid assignment target {0:?}")]
+    InvalidAssignmentTarget(Token),
 }
 
 pub type ExprResult = Result<BoxExpr, ParserError>;
@@ -104,11 +106,27 @@ impl Parser {
     }
 
     fn expression(&mut self) -> ExprResult {
-        self.equality()
+        self.assignment()
     }
 
     fn assignment(&mut self) -> ExprResult {
-        todo!()
+        let expr = self.equality()?;
+
+        if self.matches([TokenKind::Equal]) {
+            let equals = self.previous().clone();
+            let value = self.assignment()?;
+
+            return if let Expr::Variable(name) = expr.as_ref() {
+                wrap_expr(Expr::Assignment {
+                    name: name.clone(),
+                    value,
+                })
+            } else {
+                Err(ParserError::InvalidAssignmentTarget(equals.clone()))
+            };
+        } else {
+            Ok(expr)
+        }
     }
 
     fn equality(&mut self) -> ExprResult {

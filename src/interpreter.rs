@@ -20,8 +20,7 @@ use RuntimeValue::*;
 
 #[derive(Debug)]
 struct Environment {
-    current_id: usize,
-    max_id: usize,
+    current_ind: usize,
     enclosing_ids: Vec<Option<usize>>,
     value_scopes: Vec<BTreeMap<Rc<str>, RuntimeValue>>,
 }
@@ -29,8 +28,7 @@ struct Environment {
 impl Default for Environment {
     fn default() -> Self {
         Self {
-            current_id: 0,
-            max_id: 0,
+            current_ind: 0,
             enclosing_ids: vec![None],
             value_scopes: vec![BTreeMap::new()],
         }
@@ -39,11 +37,11 @@ impl Default for Environment {
 
 impl Environment {
     fn define(&mut self, name: Rc<str>, value: RuntimeValue) {
-        self.value_scopes[self.current_id].insert(name, value);
+        self.value_scopes[self.current_ind].insert(name, value);
     }
 
     fn get(&self, name: &Token) -> Option<&RuntimeValue> {
-        let mut id = self.current_id;
+        let mut id = self.current_ind;
 
         loop {
             if let Some(val) = self.value_scopes[id].get(&name.lexeme) {
@@ -58,7 +56,7 @@ impl Environment {
     }
 
     fn assign(&mut self, name: Token, value: RuntimeValue) -> RuntimeValue {
-        let mut id = self.current_id;
+        let mut id = self.current_ind;
         let key = &name.lexeme;
 
         loop {
@@ -81,6 +79,19 @@ impl Environment {
                 panic!("undefined variable");
             }
         }
+    }
+
+    fn push(&mut self) {
+        self.enclosing_ids.push(Some(self.current_ind));
+        self.value_scopes.push(BTreeMap::new());
+        self.current_ind = self.value_scopes.len() - 1;
+    }
+
+    fn pop(&mut self) {
+        let next_ind = self.enclosing_ids[self.current_ind];
+        self.enclosing_ids.swap_remove(self.current_ind);
+        self.value_scopes.swap_remove(self.current_ind);
+        self.current_ind = next_ind.expect("No enclosing env");
     }
 }
 
@@ -256,6 +267,17 @@ impl ExprVisitor for Interpreter {
         let value = value.accept(self);
 
         self.environment.assign(name, value)
+    }
+
+    fn visit_block(&mut self, stmts: Vec<crate::statement::Stmt>) -> Self::ReturnType {
+        self.environment.push();
+
+        for stmt in stmts {
+            stmt.accept(self);
+        }
+
+        self.environment.pop();
+        RuntimeValue::Unit
     }
 }
 

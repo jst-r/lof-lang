@@ -22,6 +22,8 @@ pub enum ParserError {
     InvalidLiteral(Token),
     #[error("invalid assignment target {0:?}")]
     InvalidAssignmentTarget(Token),
+    #[error("block not closed {0:?}")]
+    UnclosedBlock(Token),
 }
 
 pub type ExprResult = Result<BoxExpr, ParserError>;
@@ -58,9 +60,9 @@ impl Parser {
 
     fn declaration(&mut self) -> StmtResult {
         if self.matches([TokenKind::Var]) {
-            Ok(self.var_declaration()?)
+            self.var_declaration()
         } else {
-            Ok(self.statement()?)
+            self.statement()
         }
     }
 
@@ -106,7 +108,33 @@ impl Parser {
     }
 
     fn expression(&mut self) -> ExprResult {
-        self.assignment()
+        match self.peek().kind {
+            TokenKind::LeftCurly => self.expression_with_block(),
+            _ => self.assignment(),
+        }
+    }
+
+    fn expression_with_block(&mut self) -> ExprResult {
+        if self.matches([TokenKind::LeftCurly]) {
+            wrap_expr(Expr::Block(self.block()?))
+        } else {
+            Err(ParserError::UnexpectedToken(self.peek().clone()))
+        }
+    }
+
+    fn block(&mut self) -> Result<Vec<Stmt>, ParserError> {
+        let mut stmts = vec![];
+
+        while !self.check(TokenKind::RightCurly) && !self.is_at_end() {
+            stmts.push(self.declaration()?);
+        }
+
+        self.consume(
+            TokenKind::RightCurly,
+            ParserError::UnclosedBlock(self.peek().clone()),
+        )?;
+
+        Ok(stmts)
     }
 
     fn assignment(&mut self) -> ExprResult {

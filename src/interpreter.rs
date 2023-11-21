@@ -329,6 +329,14 @@ impl ExprVisitor for Interpreter {
 
         right.accept(self)
     }
+
+    fn visit_while(&mut self, condition: &BoxExpr, body: &BoxExpr) -> Self::ReturnType {
+        while Interpreter::is_truthy(&condition.accept(self)) {
+            body.accept(self);
+        }
+
+        Unit
+    }
 }
 
 impl StmtVisitor for Interpreter {

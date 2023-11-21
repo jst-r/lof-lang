@@ -93,7 +93,6 @@ impl<'a> Scanner<'a> {
             '{' => self.add_token(TokenKind::LeftCurly),
             '}' => self.add_token(TokenKind::RightCurly),
             ',' => self.add_token(TokenKind::Comma),
-            '.' => self.add_token(TokenKind::Dot),
             '-' => self.add_token(TokenKind::Minus),
             '+' => self.add_token(TokenKind::Plus),
             ';' => self.add_token(TokenKind::Semicolon),
@@ -103,6 +102,13 @@ impl<'a> Scanner<'a> {
                     self.add_token(TokenKind::BangEqual)
                 } else {
                     self.add_token(TokenKind::Bang)
+                }
+            }
+            '.' => {
+                if self.matches('.') {
+                    self.add_token(TokenKind::DotDot)
+                } else {
+                    self.add_token(TokenKind::Dot)
                 }
             }
             '=' => {

@@ -33,6 +33,10 @@ pub enum Expr {
         operator: Token,
         right: BoxExpr,
     },
+    While {
+        condition: BoxExpr,
+        body: BoxExpr,
+    },
 }
 
 #[derive(Debug)]
@@ -75,6 +79,7 @@ where
         operator: &Token,
         right: &BoxExpr,
     ) -> Self::ReturnType;
+    fn visit_while(&mut self, condition: &BoxExpr, body: &BoxExpr) -> Self::ReturnType;
 
     fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         match expr.as_ref() {
@@ -99,6 +104,7 @@ where
                 operator,
                 right,
             } => self.visit_logical(left, operator, right),
+            Expr::While { condition, body } => self.visit_while(condition, body),
         }
     }
 }

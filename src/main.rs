@@ -16,8 +16,11 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &'static str = r#"
-print 0 or "truthy";
-print 1 and "";
+var i = 0;
+while i < 10 {
+    print i;
+    i = i + 1;
+};
 "#;
 
 fn main() {

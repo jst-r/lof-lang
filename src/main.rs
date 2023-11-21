@@ -16,21 +16,15 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &'static str = r#"
-var a=1;
-var b=2;
-var c=3;
-{
+var a = 1;
+if a + 1 == 2 {
     var a = "inner a";
-    print "inner scope";
+    print "yay";
     print a;
-    print b;
-    print c;
-
+} else {
+    print "nay";
 };
-print "outer scope";
 print a;
-print b;
-print c;
 "#;
 
 fn main() {

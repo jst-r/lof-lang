@@ -109,20 +109,22 @@ impl Parser {
 
     fn expression(&mut self) -> ExprResult {
         match self.peek().kind {
-            TokenKind::LeftCurly => self.expression_with_block(),
+            TokenKind::LeftCurly | TokenKind::If => self.expression_with_block(),
             _ => self.assignment(),
         }
     }
 
     fn expression_with_block(&mut self) -> ExprResult {
         if self.matches([TokenKind::LeftCurly]) {
-            wrap_expr(Expr::Block(self.block()?))
+            self.block()
+        } else if self.matches([TokenKind::If]) {
+            self.if_expr()
         } else {
             Err(ParserError::UnexpectedToken(self.peek().clone()))
         }
     }
 
-    fn block(&mut self) -> Result<Vec<Stmt>, ParserError> {
+    fn block(&mut self) -> ExprResult {
         let mut stmts = vec![];
 
         while !self.check(TokenKind::RightCurly) && !self.is_at_end() {
@@ -134,7 +136,34 @@ impl Parser {
             ParserError::UnclosedBlock(self.peek().clone()),
         )?;
 
-        Ok(stmts)
+        wrap_expr(Expr::Block(stmts))
+    }
+
+    fn if_expr(&mut self) -> ExprResult {
+        let condition = self.expression()?;
+
+        self.consume(
+            TokenKind::LeftCurly,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let then_branch = self.block()?;
+
+        let else_branch = if self.matches([TokenKind::Else]) {
+            self.consume(
+                TokenKind::LeftCurly,
+                ParserError::UnexpectedToken(self.peek().clone()),
+            )?;
+            Some(self.block()?)
+        } else {
+            None
+        };
+
+        wrap_expr(Expr::If {
+            condition,
+            then_branch,
+            else_branch,
+        })
     }
 
     fn assignment(&mut self) -> ExprResult {

@@ -23,6 +23,11 @@ pub enum Expr {
         value: BoxExpr,
     },
     Block(Vec<Stmt>),
+    If {
+        condition: BoxExpr,
+        then_branch: BoxExpr,
+        else_branch: Option<BoxExpr>,
+    },
 }
 
 #[derive(Debug)]
@@ -48,6 +53,12 @@ where
     fn visit_variable(&mut self, token: Token) -> Self::ReturnType;
     fn visit_assignment(&mut self, name: Token, value: BoxExpr) -> Self::ReturnType;
     fn visit_block(&mut self, stmts: Vec<Stmt>) -> Self::ReturnType;
+    fn visit_if(
+        &mut self,
+        condition: BoxExpr,
+        then_branch: BoxExpr,
+        else_branch: Option<BoxExpr>,
+    ) -> Self::ReturnType;
 
     fn visit(&mut self, expr: BoxExpr) -> Self::ReturnType {
         match *expr {
@@ -62,6 +73,11 @@ where
             Expr::Variable(token) => self.visit_variable(token),
             Expr::Assignment { name, value } => self.visit_assignment(name, value),
             Expr::Block(stmts) => self.visit_block(stmts),
+            Expr::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => self.visit_if(condition, then_branch, else_branch),
         }
     }
 }

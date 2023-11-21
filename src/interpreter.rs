@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::{collections::BTreeMap, rc::Rc, sync::Arc};
 
 use crate::{
     expression::{BoxExpr, ExprVisitor, LiteralExpr},
@@ -107,6 +107,15 @@ impl Interpreter {
         }
     }
 
+    fn is_truthy(val: RuntimeValue) -> bool {
+        match val {
+            Integer(i) => i == 0,
+            Bool(b) => b,
+            String(s) => s.is_empty(),
+            _ => panic!("invalid type"),
+        }
+    }
+
     fn unary_minus(val: RuntimeValue) -> RuntimeValue {
         match val {
             Float(f) => Float(-f),
@@ -116,12 +125,7 @@ impl Interpreter {
     }
 
     fn unary_bang(val: RuntimeValue) -> RuntimeValue {
-        Bool(match val {
-            Integer(i) => i == 0,
-            Bool(b) => b,
-            String(s) => s.is_empty(),
-            _ => panic!("invalid type"),
-        })
+        Bool(!Interpreter::is_truthy(val))
     }
 
     fn binary_plus(left: RuntimeValue, right: RuntimeValue) -> RuntimeValue {
@@ -278,6 +282,21 @@ impl ExprVisitor for Interpreter {
 
         self.environment.pop();
         RuntimeValue::Unit
+    }
+
+    fn visit_if(
+        &mut self,
+        condition: BoxExpr,
+        then_branch: BoxExpr,
+        else_branch: Option<BoxExpr>,
+    ) -> Self::ReturnType {
+        if Interpreter::is_truthy(condition.accept(self)) {
+            then_branch.accept(self)
+        } else if let Some(else_branch) = else_branch {
+            else_branch.accept(self)
+        } else {
+            Unit
+        }
     }
 }
 

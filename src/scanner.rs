@@ -97,41 +97,11 @@ impl<'a> Scanner<'a> {
             '+' => self.add_token(TokenKind::Plus),
             ';' => self.add_token(TokenKind::Semicolon),
             '*' => self.add_token(TokenKind::Star),
-            '!' => {
-                if self.matches('=') {
-                    self.add_token(TokenKind::BangEqual)
-                } else {
-                    self.add_token(TokenKind::Bang)
-                }
-            }
-            '.' => {
-                if self.matches('.') {
-                    self.add_token(TokenKind::DotDot)
-                } else {
-                    self.add_token(TokenKind::Dot)
-                }
-            }
-            '=' => {
-                if self.matches('=') {
-                    self.add_token(TokenKind::EqualEqual)
-                } else {
-                    self.add_token(TokenKind::Equal)
-                }
-            }
-            '<' => {
-                if self.matches('=') {
-                    self.add_token(TokenKind::LessEqual)
-                } else {
-                    self.add_token(TokenKind::Less)
-                }
-            }
-            '>' => {
-                if self.matches('=') {
-                    self.add_token(TokenKind::GreaterEqual)
-                } else {
-                    self.add_token(TokenKind::Greater)
-                }
-            }
+            '!' => self.add_token_lookahead('=', TokenKind::BangEqual, TokenKind::Bang),
+            '.' => self.add_token_lookahead('.', TokenKind::DotDot, TokenKind::Dot),
+            '=' => self.add_token_lookahead('=', TokenKind::EqualEqual, TokenKind::Equal),
+            '<' => self.add_token_lookahead('=', TokenKind::LessEqual, TokenKind::Less),
+            '>' => self.add_token_lookahead('=', TokenKind::GreaterEqual, TokenKind::Greater),
             '/' => {
                 if self.matches('/') {
                     while self.peek() != Some('\n') && self.is_at_end() {
@@ -195,6 +165,14 @@ impl<'a> Scanner<'a> {
 
     fn add_token(&mut self, kind: TokenKind) {
         self.add_literal_token(kind, LiteralValue::None)
+    }
+
+    fn add_token_lookahead(&mut self, next_kind: char, two: TokenKind, one: TokenKind) {
+        if self.matches(next_kind) {
+            self.add_token(two)
+        } else {
+            self.add_token(one)
+        }
     }
 
     fn add_literal_token(&mut self, kind: TokenKind, value: LiteralValue) {

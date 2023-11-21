@@ -1,5 +1,3 @@
-//TODO Error handling
-
 use lazy_static::lazy_static;
 use std::{collections::BTreeMap, rc::Rc, str::CharIndices};
 use thiserror::Error;
@@ -28,8 +26,6 @@ lazy_static! {
 
 #[derive(Error, Debug, Clone, Copy)]
 pub enum ScannerError {
-    #[error("unexpected end of file")]
-    UnexpectedEOF,
     #[error("unexpected token")]
     UnexpectedToken,
     #[error("unterminated string")]

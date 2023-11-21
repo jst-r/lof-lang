@@ -24,6 +24,7 @@ fn main() {
     run_code(SOURCE);
 }
 
+#[allow(dead_code)]
 fn run_repl() {
     let mut interpreter = Interpreter::default();
     loop {

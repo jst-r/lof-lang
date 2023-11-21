@@ -51,24 +51,33 @@ where
 {
     type ReturnType;
 
-    fn visit_binary(&mut self, left: BoxExpr, operator: Token, right: BoxExpr) -> Self::ReturnType;
-    fn visit_unary(&mut self, operator: Token, right: BoxExpr) -> Self::ReturnType;
-    fn visit_literal(&mut self, literal: LiteralExpr) -> Self::ReturnType;
-    fn visit_group(&mut self, expr: BoxExpr) -> Self::ReturnType;
-    fn visit_variable(&mut self, token: Token) -> Self::ReturnType;
-    fn visit_assignment(&mut self, name: Token, value: BoxExpr) -> Self::ReturnType;
-    fn visit_block(&mut self, stmts: Vec<Stmt>) -> Self::ReturnType;
+    fn visit_binary(
+        &mut self,
+        left: &BoxExpr,
+        operator: &Token,
+        right: &BoxExpr,
+    ) -> Self::ReturnType;
+    fn visit_unary(&mut self, operator: &Token, right: &BoxExpr) -> Self::ReturnType;
+    fn visit_literal(&mut self, literal: &LiteralExpr) -> Self::ReturnType;
+    fn visit_group(&mut self, expr: &BoxExpr) -> Self::ReturnType;
+    fn visit_variable(&mut self, token: &Token) -> Self::ReturnType;
+    fn visit_assignment(&mut self, name: &Token, value: &BoxExpr) -> Self::ReturnType;
+    fn visit_block(&mut self, stmts: &Vec<Stmt>) -> Self::ReturnType;
     fn visit_if(
         &mut self,
-        condition: BoxExpr,
-        then_branch: BoxExpr,
-        else_branch: Option<BoxExpr>,
+        condition: &BoxExpr,
+        then_branch: &BoxExpr,
+        else_branch: &Option<BoxExpr>,
     ) -> Self::ReturnType;
-    fn visit_logical(&mut self, left: BoxExpr, operator: Token, right: BoxExpr)
-        -> Self::ReturnType;
+    fn visit_logical(
+        &mut self,
+        left: &BoxExpr,
+        operator: &Token,
+        right: &BoxExpr,
+    ) -> Self::ReturnType;
 
-    fn visit(&mut self, expr: BoxExpr) -> Self::ReturnType {
-        match *expr {
+    fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
+        match expr.as_ref() {
             Expr::Binary {
                 left,
                 operator,
@@ -94,8 +103,8 @@ where
     }
 }
 
-impl<V: ExprVisitor> AcceptMut<V, V::ReturnType> for BoxExpr {
-    fn accept(self, visitor: &mut V) -> V::ReturnType {
+impl<V: ExprVisitor> AcceptMut<V, V::ReturnType> for &BoxExpr {
+    fn accept(&self, visitor: &mut V) -> V::ReturnType {
         visitor.visit(self)
     }
 }

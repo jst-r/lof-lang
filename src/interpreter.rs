@@ -1,8 +1,8 @@
-use std::{collections::BTreeMap, rc::Rc, sync::Arc};
+use std::{collections::BTreeMap, rc::Rc};
 
 use crate::{
     expression::{BoxExpr, ExprVisitor, LiteralExpr},
-    statement::StmtVisitor,
+    statement::{Stmt, StmtVisitor},
     token::{Token, TokenKind},
     visitor::AcceptMut,
 };
@@ -55,7 +55,7 @@ impl Environment {
         }
     }
 
-    fn assign(&mut self, name: Token, value: RuntimeValue) -> RuntimeValue {
+    fn assign(&mut self, name: &Token, value: RuntimeValue) -> RuntimeValue {
         let mut id = self.current_ind;
         let key = &name.lexeme;
 
@@ -101,7 +101,7 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn interpret(&mut self, program: Vec<crate::statement::Stmt>) {
+    pub fn interpret(&mut self, program: Vec<Stmt>) {
         for stmt in program {
             stmt.accept(self)
         }
@@ -218,26 +218,33 @@ impl Interpreter {
 impl ExprVisitor for Interpreter {
     type ReturnType = RuntimeValue;
 
-    fn visit_binary(&mut self, left: BoxExpr, operator: Token, right: BoxExpr) -> Self::ReturnType {
+    fn visit_binary(
+        &mut self,
+        left: &BoxExpr,
+        operator: &Token,
+        right: &BoxExpr,
+    ) -> Self::ReturnType {
         let left = left.accept(self);
         let right = right.accept(self);
 
+        use TokenKind::*;
+
         match operator.kind {
-            TokenKind::Plus => Interpreter::binary_plus(left, right),
-            TokenKind::Minus => Interpreter::binary_minus(left, right),
-            TokenKind::Star => Interpreter::binary_star(left, right),
-            TokenKind::Slash => Interpreter::binary_slash(left, right),
-            TokenKind::Greater => Interpreter::binary_greater(left, right),
-            TokenKind::GreaterEqual => Interpreter::binary_greater_equal(left, right),
-            TokenKind::Less => Interpreter::binary_less(left, right),
-            TokenKind::LessEqual => Interpreter::binary_less_equal(left, right),
-            TokenKind::BangEqual => Interpreter::binary_bang_equal(left, right),
-            TokenKind::EqualEqual => Interpreter::binary_equal_equal(left, right),
+            Plus => Interpreter::binary_plus(left, right),
+            Minus => Interpreter::binary_minus(left, right),
+            Star => Interpreter::binary_star(left, right),
+            Slash => Interpreter::binary_slash(left, right),
+            Greater => Interpreter::binary_greater(left, right),
+            GreaterEqual => Interpreter::binary_greater_equal(left, right),
+            Less => Interpreter::binary_less(left, right),
+            LessEqual => Interpreter::binary_less_equal(left, right),
+            BangEqual => Interpreter::binary_bang_equal(left, right),
+            EqualEqual => Interpreter::binary_equal_equal(left, right),
             _ => panic!("Invalid binary operator"),
         }
     }
 
-    fn visit_unary(&mut self, operator: Token, right: BoxExpr) -> Self::ReturnType {
+    fn visit_unary(&mut self, operator: &Token, right: &BoxExpr) -> Self::ReturnType {
         let right = right.accept(self);
 
         match operator.kind {
@@ -247,33 +254,33 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_literal(&mut self, literal: LiteralExpr) -> Self::ReturnType {
+    fn visit_literal(&mut self, literal: &LiteralExpr) -> Self::ReturnType {
         match literal {
-            LiteralExpr::Bool(b) => Bool(b),
-            LiteralExpr::Integer(n) => Integer(n),
-            LiteralExpr::Float(f) => Float(f),
-            LiteralExpr::String(s) => String(s),
+            LiteralExpr::Bool(b) => Bool(*b),
+            LiteralExpr::Integer(n) => Integer(*n),
+            LiteralExpr::Float(f) => Float(*f),
+            LiteralExpr::String(s) => String(s.clone()),
         }
     }
 
-    fn visit_group(&mut self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit_group(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         expr.accept(self)
     }
 
-    fn visit_variable(&mut self, token: Token) -> Self::ReturnType {
+    fn visit_variable(&mut self, token: &Token) -> Self::ReturnType {
         match self.environment.get(&token) {
             Some(t) => t.clone(),
             Option::None => panic!("undefined variable"),
         }
     }
 
-    fn visit_assignment(&mut self, name: Token, value: BoxExpr) -> Self::ReturnType {
+    fn visit_assignment(&mut self, name: &Token, value: &BoxExpr) -> Self::ReturnType {
         let value = value.accept(self);
 
         self.environment.assign(name, value)
     }
 
-    fn visit_block(&mut self, stmts: Vec<crate::statement::Stmt>) -> Self::ReturnType {
+    fn visit_block(&mut self, stmts: &Vec<crate::statement::Stmt>) -> Self::ReturnType {
         self.environment.push();
 
         for stmt in stmts {
@@ -286,9 +293,9 @@ impl ExprVisitor for Interpreter {
 
     fn visit_if(
         &mut self,
-        condition: BoxExpr,
-        then_branch: BoxExpr,
-        else_branch: Option<BoxExpr>,
+        condition: &BoxExpr,
+        then_branch: &BoxExpr,
+        else_branch: &Option<BoxExpr>,
     ) -> Self::ReturnType {
         if Interpreter::is_truthy(&condition.accept(self)) {
             then_branch.accept(self)
@@ -301,9 +308,9 @@ impl ExprVisitor for Interpreter {
 
     fn visit_logical(
         &mut self,
-        left: BoxExpr,
-        operator: Token,
-        right: BoxExpr,
+        left: &BoxExpr,
+        operator: &Token,
+        right: &BoxExpr,
     ) -> Self::ReturnType {
         let left_val = left.accept(self);
         let left_truthy = Interpreter::is_truthy(&left_val);
@@ -327,15 +334,15 @@ impl ExprVisitor for Interpreter {
 impl StmtVisitor for Interpreter {
     type ReturnType = ();
 
-    fn visit_print(&mut self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit_print(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         println!("{:?}", expr.accept(self))
     }
 
-    fn visit_expr(&mut self, expr: BoxExpr) -> Self::ReturnType {
+    fn visit_expr(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         expr.accept(self);
     }
 
-    fn visit_var(&mut self, name: Token, initializer: Option<BoxExpr>) -> Self::ReturnType {
+    fn visit_var(&mut self, name: &Token, initializer: &Option<BoxExpr>) -> Self::ReturnType {
         let value = match initializer {
             Some(init) => init.accept(self),
             Option::None => Unit,

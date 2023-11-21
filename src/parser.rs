@@ -109,7 +109,7 @@ impl Parser {
 
     fn expression(&mut self) -> ExprResult {
         match self.peek().kind {
-            TokenKind::LeftCurly | TokenKind::If => self.expression_with_block(),
+            TokenKind::LeftCurly | TokenKind::If | TokenKind::While => self.expression_with_block(),
             _ => self.assignment(),
         }
     }
@@ -119,6 +119,8 @@ impl Parser {
             self.block()
         } else if self.matches([TokenKind::If]) {
             self.if_expr()
+        } else if self.matches([TokenKind::While]) {
+            self.while_loop()
         } else {
             Err(ParserError::UnexpectedToken(self.peek().clone()))
         }
@@ -164,6 +166,19 @@ impl Parser {
             then_branch,
             else_branch,
         })
+    }
+
+    fn while_loop(&mut self) -> ExprResult {
+        let condition = self.expression()?;
+
+        self.consume(
+            TokenKind::LeftCurly,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let body = self.block()?;
+
+        wrap_expr(Expr::While { condition, body })
     }
 
     fn assignment(&mut self) -> ExprResult {

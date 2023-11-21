@@ -28,6 +28,11 @@ pub enum Expr {
         then_branch: BoxExpr,
         else_branch: Option<BoxExpr>,
     },
+    Logical {
+        left: BoxExpr,
+        operator: Token,
+        right: BoxExpr,
+    },
 }
 
 #[derive(Debug)]
@@ -59,6 +64,8 @@ where
         then_branch: BoxExpr,
         else_branch: Option<BoxExpr>,
     ) -> Self::ReturnType;
+    fn visit_logical(&mut self, left: BoxExpr, operator: Token, right: BoxExpr)
+        -> Self::ReturnType;
 
     fn visit(&mut self, expr: BoxExpr) -> Self::ReturnType {
         match *expr {
@@ -78,6 +85,11 @@ where
                 then_branch,
                 else_branch,
             } => self.visit_if(condition, then_branch, else_branch),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => self.visit_logical(left, operator, right),
         }
     }
 }

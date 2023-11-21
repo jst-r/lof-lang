@@ -16,15 +16,8 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &'static str = r#"
-var a = 1;
-if a + 1 == 2 {
-    var a = "inner a";
-    print "yay";
-    print a;
-} else {
-    print "nay";
-};
-print a;
+print 0 or "truthy";
+print 1 and "";
 "#;
 
 fn main() {

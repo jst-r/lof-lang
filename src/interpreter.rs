@@ -107,11 +107,11 @@ impl Interpreter {
         }
     }
 
-    fn is_truthy(val: RuntimeValue) -> bool {
+    fn is_truthy(val: &RuntimeValue) -> bool {
         match val {
-            Integer(i) => i == 0,
-            Bool(b) => b,
-            String(s) => s.is_empty(),
+            Integer(i) => *i != 0,
+            Bool(b) => *b,
+            String(s) => !s.is_empty(),
             _ => panic!("invalid type"),
         }
     }
@@ -125,7 +125,7 @@ impl Interpreter {
     }
 
     fn unary_bang(val: RuntimeValue) -> RuntimeValue {
-        Bool(!Interpreter::is_truthy(val))
+        Bool(!Interpreter::is_truthy(&val))
     }
 
     fn binary_plus(left: RuntimeValue, right: RuntimeValue) -> RuntimeValue {
@@ -290,13 +290,37 @@ impl ExprVisitor for Interpreter {
         then_branch: BoxExpr,
         else_branch: Option<BoxExpr>,
     ) -> Self::ReturnType {
-        if Interpreter::is_truthy(condition.accept(self)) {
+        if Interpreter::is_truthy(&condition.accept(self)) {
             then_branch.accept(self)
         } else if let Some(else_branch) = else_branch {
             else_branch.accept(self)
         } else {
             Unit
         }
+    }
+
+    fn visit_logical(
+        &mut self,
+        left: BoxExpr,
+        operator: Token,
+        right: BoxExpr,
+    ) -> Self::ReturnType {
+        let left_val = left.accept(self);
+        let left_truthy = Interpreter::is_truthy(&left_val);
+
+        if operator.kind == TokenKind::And {
+            if !left_truthy {
+                return left_val;
+            };
+        } else if operator.kind == TokenKind::Or {
+            if left_truthy {
+                return left_val;
+            };
+        } else {
+            panic!("Invalid logical operator");
+        };
+
+        right.accept(self)
     }
 }
 

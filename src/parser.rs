@@ -167,7 +167,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> ExprResult {
-        let expr = self.equality()?;
+        let expr = self.or()?;
 
         if self.matches([TokenKind::Equal]) {
             let equals = self.previous().clone();
@@ -184,6 +184,40 @@ impl Parser {
         } else {
             Ok(expr)
         }
+    }
+
+    fn or(&mut self) -> ExprResult {
+        let mut expr = self.and()?;
+
+        while self.matches([TokenKind::Or]) {
+            let operator = self.previous().clone();
+            let right = self.and()?;
+
+            expr = Box::new(Expr::Logical {
+                left: expr,
+                operator,
+                right,
+            })
+        }
+
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> ExprResult {
+        let mut expr = self.equality()?;
+
+        while self.matches([TokenKind::And]) {
+            let operator = self.previous().clone();
+            let right = self.equality()?;
+
+            expr = Box::new(Expr::Logical {
+                left: expr,
+                operator,
+                right,
+            })
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> ExprResult {

@@ -58,6 +58,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn reset<S: Into<&'a str>>(&'a mut self, source: S) {
         let source = source.into();
 

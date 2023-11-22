@@ -15,7 +15,7 @@ use statement::Stmt;
 
 use crate::{interpreter::Interpreter, token::Token};
 
-const SOURCE: &'static str = r#"
+const SOURCE: &str = r#"
 for i in 0..10 {
     print i;
 };

@@ -374,7 +374,7 @@ impl Parser {
         if self.matches([TokenKind::Literal]) {
             let prev = self.previous();
             let literal_expr = match prev.literal.clone() {
-                LiteralValue::String(s) => Ok(Expr::Literal(LiteralExpr::String(s.into()))),
+                LiteralValue::String(s) => Ok(Expr::Literal(LiteralExpr::String(s))),
                 LiteralValue::Float(f) => Ok(Expr::Literal(LiteralExpr::Float(f))),
                 LiteralValue::Integer(n) => Ok(Expr::Literal(LiteralExpr::Integer(n))),
                 _ => Err(ParserError::InvalidLiteral(prev.clone())),

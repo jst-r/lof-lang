@@ -71,7 +71,7 @@ where
     fn visit_group(&mut self, expr: &BoxExpr) -> Self::ReturnType;
     fn visit_variable(&mut self, token: &Token) -> Self::ReturnType;
     fn visit_assignment(&mut self, name: &Token, value: &BoxExpr) -> Self::ReturnType;
-    fn visit_block(&mut self, stmts: &Vec<Stmt>) -> Self::ReturnType;
+    fn visit_block(&mut self, stmts: &[Stmt]) -> Self::ReturnType;
     fn visit_if(
         &mut self,
         condition: &BoxExpr,

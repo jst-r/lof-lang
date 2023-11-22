@@ -277,7 +277,7 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_variable(&mut self, token: &Token) -> Self::ReturnType {
-        match self.environment.get(&token) {
+        match self.environment.get(token) {
             Some(t) => t.clone(),
             Option::None => panic!("undefined variable"),
         }
@@ -289,7 +289,7 @@ impl ExprVisitor for Interpreter {
         self.environment.assign(name, value)
     }
 
-    fn visit_block(&mut self, stmts: &Vec<crate::statement::Stmt>) -> Self::ReturnType {
+    fn visit_block(&mut self, stmts: &[crate::statement::Stmt]) -> Self::ReturnType {
         self.environment.push();
 
         for stmt in stmts {

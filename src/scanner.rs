@@ -15,6 +15,7 @@ lazy_static! {
         ("false", TokenKind::False),
         ("fn", TokenKind::Fn),
         ("for", TokenKind::For),
+        ("in", TokenKind::In),
         ("while", TokenKind::While),
         ("nil", TokenKind::Nil),
         ("print", TokenKind::Print),

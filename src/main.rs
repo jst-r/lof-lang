@@ -16,10 +16,8 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &'static str = r#"
-var i = 0;
-while i < 10 {
+for i in 0..10 {
     print i;
-    i = i + 1;
 };
 "#;
 
@@ -62,6 +60,8 @@ fn run_code(source: &str) {
     let tokens: Vec<Token> = tokens.iter().map(|t| t.clone().unwrap()).collect();
     let mut parser = Parser::new(tokens);
     let prog = parser.parse();
+
+    dbg!(&prog);
 
     let prog = prog.into_iter().map(|r| r.unwrap()).collect::<Vec<Stmt>>();
 

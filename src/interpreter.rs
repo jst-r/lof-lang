@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, rc::Rc};
 
 use crate::{
-    expression::{BoxExpr, ExprVisitor, LiteralExpr},
+    expression::{BoxExpr, Expr, ExprVisitor, LiteralExpr},
     statement::{Stmt, StmtVisitor},
     token::{Token, TokenKind},
     visitor::AcceptMut,
@@ -13,6 +13,7 @@ pub enum RuntimeValue {
     Integer(isize),
     Float(f64),
     Bool(bool),
+    Range(isize, isize),
     Unit,
 }
 
@@ -213,6 +214,13 @@ impl Interpreter {
             _ => panic!("invalid type"),
         }
     }
+
+    fn binary_dot_dot(left: RuntimeValue, right: RuntimeValue) -> RuntimeValue {
+        match (left, right) {
+            (Integer(from), Integer(to)) => Range(from, to),
+            _ => panic!("invalid type"),
+        }
+    }
 }
 
 impl ExprVisitor for Interpreter {
@@ -240,6 +248,7 @@ impl ExprVisitor for Interpreter {
             LessEqual => Interpreter::binary_less_equal(left, right),
             BangEqual => Interpreter::binary_bang_equal(left, right),
             EqualEqual => Interpreter::binary_equal_equal(left, right),
+            DotDot => Interpreter::binary_dot_dot(left, right),
             _ => panic!("Invalid binary operator"),
         }
     }
@@ -336,6 +345,30 @@ impl ExprVisitor for Interpreter {
         }
 
         Unit
+    }
+
+    fn visit_for(
+        &mut self,
+        variable: &BoxExpr,
+        iterable: &BoxExpr,
+        body: &BoxExpr,
+    ) -> Self::ReturnType {
+        let identifier = match variable.as_ref() {
+            Expr::Variable(tok) => tok,
+            _ => panic!("expected a variable"),
+        };
+        if let Range(low, high) = iterable.accept(self) {
+            for i in low..high {
+                self.environment.push();
+                let lexeme = identifier.lexeme.clone();
+                self.environment.define(lexeme, Integer(i));
+                body.accept(self);
+                self.environment.pop();
+            }
+            Unit
+        } else {
+            panic!("invalid type")
+        }
     }
 }
 

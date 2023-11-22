@@ -39,6 +39,7 @@ pub enum TokenKind {
     False,
     Fn,
     For,
+    In,
     While,
     Nil,
     Print, // For now, later I want to move it to std

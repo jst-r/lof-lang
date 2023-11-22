@@ -37,6 +37,11 @@ pub enum Expr {
         condition: BoxExpr,
         body: BoxExpr,
     },
+    For {
+        variable: BoxExpr,
+        iterable: BoxExpr,
+        body: BoxExpr,
+    },
 }
 
 #[derive(Debug)]
@@ -80,6 +85,12 @@ where
         right: &BoxExpr,
     ) -> Self::ReturnType;
     fn visit_while(&mut self, condition: &BoxExpr, body: &BoxExpr) -> Self::ReturnType;
+    fn visit_for(
+        &mut self,
+        identifier: &BoxExpr,
+        iterable: &BoxExpr,
+        body: &BoxExpr,
+    ) -> Self::ReturnType;
 
     fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         match expr.as_ref() {
@@ -105,6 +116,11 @@ where
                 right,
             } => self.visit_logical(left, operator, right),
             Expr::While { condition, body } => self.visit_while(condition, body),
+            Expr::For {
+                variable,
+                iterable,
+                body,
+            } => self.visit_for(variable, iterable, body),
         }
     }
 }

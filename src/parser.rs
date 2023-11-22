@@ -109,7 +109,9 @@ impl Parser {
 
     fn expression(&mut self) -> ExprResult {
         match self.peek().kind {
-            TokenKind::LeftCurly | TokenKind::If | TokenKind::While => self.expression_with_block(),
+            TokenKind::LeftCurly | TokenKind::If | TokenKind::While | TokenKind::For => {
+                self.expression_with_block()
+            }
             _ => self.assignment(),
         }
     }
@@ -121,6 +123,8 @@ impl Parser {
             self.if_expr()
         } else if self.matches([TokenKind::While]) {
             self.while_loop()
+        } else if self.matches([TokenKind::For]) {
+            self.for_loop()
         } else {
             Err(ParserError::UnexpectedToken(self.peek().clone()))
         }
@@ -181,8 +185,37 @@ impl Parser {
         wrap_expr(Expr::While { condition, body })
     }
 
+    fn for_loop(&mut self) -> ExprResult {
+        let variable = self.primary()?;
+
+        match variable.as_ref() {
+            Expr::Variable(_) => {}
+            _ => return Err(ParserError::UnexpectedToken(self.previous().clone())),
+        };
+
+        self.consume(
+            TokenKind::In,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let iterable = self.range()?;
+
+        self.consume(
+            TokenKind::LeftCurly,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let body = self.block()?;
+
+        wrap_expr(Expr::For {
+            variable,
+            iterable,
+            body,
+        })
+    }
+
     fn assignment(&mut self) -> ExprResult {
-        let expr = self.or()?;
+        let expr = self.range()?;
 
         if self.matches([TokenKind::Equal]) {
             let equals = self.previous().clone();
@@ -199,6 +232,23 @@ impl Parser {
         } else {
             Ok(expr)
         }
+    }
+
+    fn range(&mut self) -> ExprResult {
+        let mut expr = self.or()?;
+
+        if self.matches([TokenKind::DotDot]) {
+            let operator = self.previous().clone();
+            let right = self.or()?;
+
+            expr = Box::new(Expr::Binary {
+                left: expr,
+                operator,
+                right,
+            });
+        }
+
+        Ok(expr)
     }
 
     fn or(&mut self) -> ExprResult {

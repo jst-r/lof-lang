@@ -16,9 +16,7 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &str = r#"
-for i in 0..10 {
-    print i;
-};
+print now();
 "#;
 
 fn main() {

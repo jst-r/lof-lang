@@ -4,7 +4,7 @@ use crate::{statement::Stmt, token::Token, visitor::AcceptMut};
 
 pub type BoxExpr = Box<Expr>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Binary {
         left: BoxExpr,
@@ -42,9 +42,14 @@ pub enum Expr {
         iterable: BoxExpr,
         body: BoxExpr,
     },
+    Call {
+        callee: BoxExpr,
+        paren: Token,
+        args: Vec<BoxExpr>,
+    },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 pub enum LiteralExpr {
     Bool(bool),
@@ -91,6 +96,8 @@ where
         iterable: &BoxExpr,
         body: &BoxExpr,
     ) -> Self::ReturnType;
+    fn visit_call(&mut self, callee: &BoxExpr, paren: &Token, args: &[BoxExpr])
+        -> Self::ReturnType;
 
     fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         match expr.as_ref() {
@@ -121,6 +128,11 @@ where
                 iterable,
                 body,
             } => self.visit_for(variable, iterable, body),
+            Expr::Call {
+                callee,
+                paren,
+                args,
+            } => self.visit_call(callee, paren, args),
         }
     }
 }

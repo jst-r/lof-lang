@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::{collections::BTreeMap, fmt::Debug, iter::zip, rc::Rc};
 
 use crate::{
     expression::{BoxExpr, Expr, ExprVisitor, LiteralExpr},
@@ -9,10 +9,12 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub enum RuntimeValue {
-    String(Rc<str>),
+    String(Rc<str>), //TODO: this pushes the enum size to 24 bytes, which is not ideal
     Integer(isize),
     Float(f64),
     Bool(bool),
+    Function(Rc<dyn runtime_type::Callable>), // Functions are boxed to avoid bloating the enum size
+    // those are to be removed when structs and enums are implemented
     Range(isize, isize),
     Unit,
 }
@@ -28,10 +30,25 @@ struct Environment {
 
 impl Default for Environment {
     fn default() -> Self {
+        //TODO move to globals
+        fn time(_: [RuntimeValue; 0]) -> RuntimeValue {
+            use std::time::{SystemTime, UNIX_EPOCH};
+            RuntimeValue::Integer(
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis()
+                    .try_into()
+                    .unwrap(),
+            )
+        }
+        let time_fn = Function(Rc::new(runtime_type::NativeFunctionWrapper {
+            function: time,
+        }));
         Self {
             current_ind: 0,
             enclosing_ids: vec![None],
-            value_scopes: vec![BTreeMap::new()],
+            value_scopes: vec![BTreeMap::from([(Rc::from("now"), time_fn)])],
         }
     }
 }
@@ -221,6 +238,18 @@ impl Interpreter {
             _ => panic!("invalid type"),
         }
     }
+
+    fn call(&mut self, callee: &BoxExpr, args: Vec<RuntimeValue>) -> RuntimeValue {
+        let RuntimeValue::Function(callee) = callee.accept(self) else {
+            panic!("trying to call not callable")
+        };
+
+        if callee.arity() != args.len() {
+            panic!("invalid number of arguments")
+        }
+
+        callee.call(self, args)
+    }
 }
 
 impl ExprVisitor for Interpreter {
@@ -370,6 +399,17 @@ impl ExprVisitor for Interpreter {
             panic!("invalid type")
         }
     }
+
+    fn visit_call(
+        &mut self,
+        callee: &BoxExpr,
+        paren: &Token,
+        args: &[BoxExpr],
+    ) -> Self::ReturnType {
+        let args = args.iter().map(|arg| arg.accept(self)).collect::<Vec<_>>();
+
+        self.call(&callee, args)
+    }
 }
 
 impl StmtVisitor for Interpreter {
@@ -389,5 +429,84 @@ impl StmtVisitor for Interpreter {
             Option::None => Unit,
         };
         self.environment.define(name.lexeme.clone(), value);
+    }
+
+    fn visit_function(&mut self, name: &Token, args: &[Token], body: &[Stmt]) -> Self::ReturnType {
+        // looks ugly but I dont want to do it better
+        let runtime_decl = Function(Rc::new(runtime_type::Function {
+            name: name.clone(),
+            args: args.clone().into(),
+            body: body.clone().into(),
+        }));
+
+        self.environment.define(name.lexeme.clone(), runtime_decl);
+    }
+}
+
+#[allow(dead_code)]
+pub mod runtime_type {
+    use std::{fmt::Debug, iter::zip};
+
+    use crate::{expression::ExprVisitor, statement::Stmt, token::Token};
+
+    use super::{Interpreter, RuntimeValue};
+
+    // Considering making all runtime values a struct with a marker trait. But that seems like a pain
+
+    pub trait Callable: Debug {
+        fn call(&self, interpreter: &mut Interpreter, args: Vec<RuntimeValue>) -> RuntimeValue;
+        fn arity(&self) -> usize;
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct Function {
+        pub name: Token,
+        pub args: Vec<Token>,
+        pub body: Vec<Stmt>,
+    }
+
+    impl Callable for Function {
+        fn call(&self, interpreter: &mut Interpreter, args: Vec<RuntimeValue>) -> RuntimeValue {
+            interpreter.environment.push();
+
+            for (arg_token, arg_val) in zip(self.args.iter(), args) {
+                interpreter
+                    .environment
+                    .define(arg_token.lexeme.clone(), arg_val);
+            }
+
+            interpreter.visit_block(&self.body)
+        }
+
+        fn arity(&self) -> usize {
+            self.args.len()
+        }
+    }
+
+    // kinda proud of this one
+    pub struct NativeFunctionWrapper<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeValue> {
+        pub function: F,
+    }
+
+    impl<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeValue> Callable
+        for NativeFunctionWrapper<N, F>
+    {
+        fn call(&self, _: &mut Interpreter, args: Vec<RuntimeValue>) -> RuntimeValue {
+            (self.function)(args.try_into().expect("invalid number of arguments"))
+        }
+
+        fn arity(&self) -> usize {
+            N
+        }
+    }
+
+    impl<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeValue> Debug
+        for NativeFunctionWrapper<N, F>
+    {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("NativeFunctionWrapper")
+                .field("function", &"native function")
+                .finish()
+        }
     }
 }

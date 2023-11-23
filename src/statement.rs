@@ -1,12 +1,17 @@
 use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Print(BoxExpr),
     Expr(BoxExpr),
     Var {
         name: Token,
         initializer: Option<BoxExpr>,
+    },
+    Fn {
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
     },
 }
 
@@ -16,12 +21,14 @@ pub trait StmtVisitor {
     fn visit_print(&mut self, expr: &BoxExpr) -> Self::ReturnType;
     fn visit_expr(&mut self, expr: &BoxExpr) -> Self::ReturnType;
     fn visit_var(&mut self, name: &Token, initializer: &Option<BoxExpr>) -> Self::ReturnType;
+    fn visit_function(&mut self, name: &Token, args: &[Token], body: &[Stmt]) -> Self::ReturnType;
 
     fn visit(&mut self, stmt: &Stmt) -> Self::ReturnType {
         match stmt {
             Stmt::Expr(expr) => self.visit_expr(expr),
             Stmt::Print(expr) => self.visit_print(expr),
             Stmt::Var { name, initializer } => self.visit_var(name, initializer),
+            Stmt::Fn { name, params, body } => self.visit_function(name, &params, &body),
         }
     }
 }

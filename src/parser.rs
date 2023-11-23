@@ -61,6 +61,8 @@ impl Parser {
     fn declaration(&mut self) -> StmtResult {
         if self.matches([TokenKind::Var]) {
             self.var_declaration()
+        } else if self.matches([TokenKind::Fn]) {
+            self.fn_declaration()
         } else {
             self.statement()
         }
@@ -83,6 +85,58 @@ impl Parser {
         self.consume(TokenKind::Semicolon, self.err_missing_semi())?;
 
         Ok(Stmt::Var { initializer, name })
+    }
+
+    fn fn_declaration(&mut self) -> StmtResult {
+        let name = self
+            .consume(
+                TokenKind::Identifier,
+                ParserError::InvalidVariableName(self.peek().clone()), // Expected a function name
+            )?
+            .clone();
+
+        self.consume(
+            TokenKind::LeftParen,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let mut params = vec![];
+        if !self.check(TokenKind::RightParen) {
+            loop {
+                if params.len() >= 255 {
+                    return Err(ParserError::UnexpectedToken(self.peek().clone()));
+                    // Max n params exceeded
+                }
+
+                params.push(
+                    self.consume(
+                        TokenKind::Identifier,
+                        ParserError::InvalidVariableName(self.peek().clone()), // Expected a parameter name
+                    )?
+                    .clone(),
+                );
+
+                if !self.matches([TokenKind::Comma]) {
+                    break;
+                }
+            }
+        }
+
+        self.consume(
+            TokenKind::RightParen,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        self.consume(
+            TokenKind::LeftCurly,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let Expr::Block(body) = *self.block()? else {
+            panic!("function body isn't a block")
+        };
+
+        Ok(Stmt::Fn { name, params, body })
     }
 
     fn statement(&mut self) -> StmtResult {
@@ -361,8 +415,50 @@ impl Parser {
             let right = self.unary()?;
             wrap_expr(Expr::Unary { operator, right })
         } else {
-            self.primary()
+            self.call()
         }
+    }
+
+    fn call(&mut self) -> ExprResult {
+        let mut expr = self.primary()?;
+
+        loop {
+            if self.matches([TokenKind::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: BoxExpr) -> ExprResult {
+        let mut args = vec![];
+        if !self.check(TokenKind::RightParen) {
+            loop {
+                if args.len() >= 255 {
+                    return Err(ParserError::UnexpectedToken(self.peek().clone()));
+                }
+                args.push(self.expression()?);
+                if !self.matches([TokenKind::Comma]) {
+                    break;
+                }
+            }
+        }
+
+        let paren = self
+            .consume(
+                TokenKind::RightParen,
+                ParserError::UnexpectedToken(self.peek().clone()),
+            )?
+            .clone();
+
+        return wrap_expr(Expr::Call {
+            callee,
+            paren,
+            args,
+        });
     }
 
     fn primary(&mut self) -> ExprResult {

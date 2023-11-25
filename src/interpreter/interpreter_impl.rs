@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
 use super::{
+    environment::{EnvironmentTrait, WrappedEnv},
+    globals::define_globals,
     runtime_type,
     runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
@@ -15,6 +17,12 @@ use crate::{
 
 use RuntimeValue::*;
 impl Interpreter {
+    pub fn new() -> Self {
+        let environment = WrappedEnv::default();
+        define_globals(environment.clone());
+        Self { environment }
+    }
+
     pub fn interpret(&mut self, program: Vec<Stmt>) -> RuntimeResultNoValue {
         for stmt in program {
             stmt.accept(self)?;
@@ -237,10 +245,23 @@ impl ExprVisitor for Interpreter {
         stmts: &[crate::statement::Stmt],
         return_expr: &Option<Box<Expr>>,
     ) -> Self::ReturnType {
-        self.environment.push();
+        let prev_env = self.environment.clone();
+        self.environment = self.environment.create_child();
 
+        let mut result = None;
         for stmt in stmts {
-            stmt.accept(self)?;
+            match stmt.accept(self) {
+                Err(e) => {
+                    result = Some(e);
+                    break;
+                }
+                _ => {}
+            };
+        }
+
+        if let Some(e) = result {
+            self.environment = prev_env;
+            return Err(e);
         }
 
         let return_value = if let Some(return_expr) = return_expr {
@@ -249,7 +270,7 @@ impl ExprVisitor for Interpreter {
             RuntimeValue::Unit.into()
         };
 
-        self.environment.pop();
+        self.environment = prev_env;
 
         return_value
     }
@@ -311,18 +332,35 @@ impl ExprVisitor for Interpreter {
             Expr::Variable(tok) => tok,
             _ => panic!("expected a variable"),
         };
-        if let Range(low, high) = iterable.accept(self)? {
-            for i in low..high {
-                self.environment.push();
-                let lexeme = identifier.lexeme.clone();
-                self.environment.define(lexeme, Integer(i));
-                body.accept(self)?;
-                self.environment.pop();
-            }
-            Unit.into()
-        } else {
+        let Range(low, high) = iterable.accept(self)? else {
             panic!("invalid type")
+        };
+
+        let prev_env = self.environment.clone();
+        self.environment = self.environment.create_child();
+
+        let lexeme = identifier.lexeme.clone();
+        self.environment.define(lexeme.clone(), Integer(low));
+
+        let mut result = None;
+        for i in low..high {
+            self.environment.assign(identifier, Integer(i)).unwrap(); // It is always defined
+            match body.accept(self) {
+                Err(e) => {
+                    result = Some(Err(e));
+                    break;
+                }
+                Ok(_) => {}
+            };
         }
+
+        self.environment = prev_env;
+
+        if let None = result {
+            result = Some(Ok(Unit));
+        }
+
+        result.unwrap()
     }
 
     fn visit_call(&mut self, callee: &BoxExpr, _: &Token, args: &[BoxExpr]) -> Self::ReturnType {

@@ -56,7 +56,7 @@ fn run_code(source: &str) {
 
     let prog = prog.into_iter().map(|r| r.unwrap()).collect::<Vec<Stmt>>();
 
-    let mut interpreter = Interpreter::default();
+    let mut interpreter = Interpreter::new();
 
     println!("{:?}", interpreter.interpret(prog));
 }

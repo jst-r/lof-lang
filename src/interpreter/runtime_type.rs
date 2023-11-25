@@ -3,7 +3,7 @@ use std::{fmt::Debug, iter::zip};
 use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
 use super::{
-    environment::EnvironmentTrait,
+    environment::{EnvironmentTrait, WrappedEnv},
     runtime_value::{RuntimeResult, RuntimeUnwind, RuntimeValue},
     Interpreter,
 };
@@ -18,6 +18,7 @@ pub trait Callable: Debug {
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: Token,
+    pub closure: WrappedEnv,
     pub args: Vec<Token>,
     pub body: BoxExpr,
 }
@@ -25,7 +26,7 @@ pub struct Function {
 impl Callable for Function {
     fn call(&self, interpreter: &mut Interpreter, args: Vec<RuntimeValue>) -> RuntimeResult {
         let prev_env = interpreter.environment.clone();
-        interpreter.environment = interpreter.environment.create_child();
+        interpreter.environment = self.closure.create_child();
 
         for (arg_token, arg_val) in zip(self.args.iter(), args) {
             interpreter

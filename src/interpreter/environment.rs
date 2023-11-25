@@ -9,7 +9,7 @@ pub type WrappedEnv = Rc<RefCell<Environment>>;
 #[derive(Debug, Default)]
 pub struct Environment {
     pub enclosing: Option<WrappedEnv>,
-    values: BTreeMap<Rc<str>, RuntimeValue>,
+    pub values: BTreeMap<Rc<str>, RuntimeValue>,
 }
 
 pub trait EnvironmentTrait {
@@ -49,7 +49,8 @@ impl EnvironmentTrait for WrappedEnv {
     }
 
     fn assign(&mut self, name: &Token, value: RuntimeValue) -> RuntimeResult {
-        if let Some(prev) = self.get(name) {
+        let prev = self.borrow().values.get(&name.lexeme).cloned();
+        if let Some(prev) = prev {
             if Environment::check_assignment_type(prev, &value) {
                 self.borrow_mut()
                     .values

@@ -1,8 +1,8 @@
-mod environment;
-mod globals;
-mod interpreter_impl;
-mod runtime_type;
-mod runtime_value;
+pub mod environment;
+pub mod globals;
+pub mod interpreter_impl;
+pub mod runtime_type;
+pub mod runtime_value;
 
 use self::environment::WrappedEnv;
 

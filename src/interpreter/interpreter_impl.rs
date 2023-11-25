@@ -414,6 +414,7 @@ impl StmtVisitor for Interpreter {
             name: name.clone(),
             args: args.into(),
             body: body.clone(),
+            closure: self.environment.clone(),
         }));
 
         self.environment.define(name.lexeme.clone(), runtime_decl);

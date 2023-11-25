@@ -1,6 +1,6 @@
-use std::{fmt::Debug, rc::Rc};
+use std::rc::Rc;
 
-use super::{environment::Environment, runtime_type, runtime_value::RuntimeValue};
+use super::{runtime_type, runtime_value::RuntimeValue, Interpreter};
 
 use crate::{
     expression::{BoxExpr, Expr, ExprVisitor, LiteralExpr},
@@ -8,11 +8,6 @@ use crate::{
     token::{Token, TokenKind},
     visitor::AcceptMut,
 };
-
-#[derive(Debug, Default)]
-pub struct Interpreter {
-    pub environment: Environment,
-}
 
 use RuntimeValue::*;
 impl Interpreter {
@@ -311,7 +306,7 @@ impl ExprVisitor for Interpreter {
     fn visit_call(&mut self, callee: &BoxExpr, _: &Token, args: &[BoxExpr]) -> Self::ReturnType {
         let args = args.iter().map(|arg| arg.accept(self)).collect::<Vec<_>>();
 
-        self.call(&callee, args)
+        self.call(callee, args)
     }
 }
 

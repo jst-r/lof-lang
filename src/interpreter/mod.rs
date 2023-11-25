@@ -1,6 +1,11 @@
 mod environment;
-mod interpreter;
+mod interpreter_impl;
 mod runtime_type;
 mod runtime_value;
 
-pub use interpreter::Interpreter;
+use self::environment::Environment;
+
+#[derive(Debug, Default)]
+pub struct Interpreter {
+    pub environment: Environment,
+}

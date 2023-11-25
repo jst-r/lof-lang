@@ -34,7 +34,7 @@ pub trait StmtVisitor {
             } => self.visit_expr(expr),
             Stmt::Print(expr) => self.visit_print(expr),
             Stmt::Var { name, initializer } => self.visit_var(name, initializer),
-            Stmt::Fn { name, params, body } => self.visit_function(name, &params, &body),
+            Stmt::Fn { name, params, body } => self.visit_function(name, params, body),
         }
     }
 }

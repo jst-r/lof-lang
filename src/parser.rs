@@ -476,11 +476,11 @@ impl Parser {
             )?
             .clone();
 
-        return wrap_expr(Expr::Call {
+        wrap_expr(Expr::Call {
             callee,
             paren,
             args,
-        });
+        })
     }
 
     fn primary(&mut self) -> ExprResult {

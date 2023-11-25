@@ -2,7 +2,7 @@ use std::{fmt::Debug, iter::zip};
 
 use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
-use super::{Interpreter, RuntimeValue};
+use super::{runtime_value::RuntimeValue, Interpreter};
 
 // Considering making all runtime values a struct with a marker trait. But that seems like a pain
 

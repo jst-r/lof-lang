@@ -1,7 +1,6 @@
 use std::{collections::BTreeMap, rc::Rc};
 
-use super::runtime_type::NativeFunctionWrapper;
-use super::runtime_value::RuntimeValue;
+use super::{runtime_type::NativeFunctionWrapper, runtime_value::RuntimeValue};
 
 use crate::token::Token;
 

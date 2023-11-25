@@ -1,6 +1,9 @@
 use std::{collections::BTreeMap, rc::Rc};
 
-use super::{runtime_type::NativeFunctionWrapper, runtime_value::RuntimeValue};
+use super::{
+    runtime_type::NativeFunctionWrapper,
+    runtime_value::{RuntimeResult, RuntimeValue},
+};
 
 use crate::token::Token;
 
@@ -14,7 +17,7 @@ pub struct Environment {
 impl Default for Environment {
     fn default() -> Self {
         //TODO move to globals
-        fn time(_: [RuntimeValue; 0]) -> RuntimeValue {
+        fn time(_: [RuntimeValue; 0]) -> RuntimeResult {
             use std::time::{SystemTime, UNIX_EPOCH};
             RuntimeValue::Integer(
                 SystemTime::now()
@@ -24,6 +27,7 @@ impl Default for Environment {
                     .try_into()
                     .unwrap(),
             )
+            .into()
         }
         let time_fn = RuntimeValue::Function(Rc::new(NativeFunctionWrapper { function: time }));
         Self {
@@ -54,7 +58,7 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: &Token, value: RuntimeValue) -> RuntimeValue {
+    pub fn assign(&mut self, name: &Token, value: RuntimeValue) -> RuntimeResult {
         use RuntimeValue::*;
 
         let mut id = self.current_ind;
@@ -72,7 +76,7 @@ impl Environment {
                     _ => panic!("type error"),
                 };
 
-                return value;
+                return value.into();
             } else if let Some(new_id) = self.enclosing_ids[id] {
                 id = new_id;
                 continue;

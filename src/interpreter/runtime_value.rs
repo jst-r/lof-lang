@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use thiserror::Error;
 
 use super::runtime_type;
 
@@ -12,4 +13,28 @@ pub enum RuntimeValue {
     // those are to be removed when structs and enums are implemented
     Range(isize, isize),
     Unit,
+}
+
+#[derive(Error, Debug)]
+pub enum RuntimeError {}
+
+#[derive(Debug)]
+pub enum RuntimeUnwind {
+    Err(RuntimeError),
+    Return(RuntimeValue),
+}
+
+pub type RuntimeResult = Result<RuntimeValue, RuntimeUnwind>;
+pub type RuntimeResultNoValue = Result<(), RuntimeUnwind>;
+
+impl Into<RuntimeResult> for RuntimeValue {
+    fn into(self) -> RuntimeResult {
+        Ok(self)
+    }
+}
+
+impl Into<RuntimeResult> for RuntimeError {
+    fn into(self) -> RuntimeResult {
+        Err(RuntimeUnwind::Err(self))
+    }
 }

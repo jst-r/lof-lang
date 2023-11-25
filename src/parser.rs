@@ -24,6 +24,8 @@ pub enum ParserError {
     InvalidAssignmentTarget(Token),
     #[error("block not closed {0:?}")]
     UnclosedBlock(Token),
+    #[error("expected expression, found {0:?}")]
+    ExpectedExpression(Token),
 }
 
 pub type ExprResult = Result<BoxExpr, ParserError>;
@@ -175,7 +177,7 @@ impl Parser {
             TokenKind::LeftCurly | TokenKind::If | TokenKind::While | TokenKind::For => {
                 self.expression_with_block()
             }
-            _ => self.assignment(),
+            _ => self.return_expr(),
         }
     }
 
@@ -288,6 +290,22 @@ impl Parser {
             iterable,
             body,
         })
+    }
+
+    fn return_expr(&mut self) -> ExprResult {
+        if self.matches([TokenKind::Return]) {
+            let keyword = self.previous().clone();
+            let value = self.assignment();
+            let value = match value {
+                Ok(val) => Some(val),
+                Err(ParserError::ExpectedExpression(_)) => None,
+                _ => return value,
+            };
+
+            wrap_expr(Expr::Return { keyword, value })
+        } else {
+            self.assignment()
+        }
     }
 
     fn assignment(&mut self) -> ExprResult {
@@ -517,7 +535,7 @@ impl Parser {
             return wrap_expr(Expr::Group(expr));
         }
 
-        Err(ParserError::UnexpectedToken(self.peek().clone()))
+        Err(ParserError::ExpectedExpression(self.peek().clone()))
     }
 
     fn matches<const N: usize>(&mut self, kinds: [TokenKind; N]) -> bool {

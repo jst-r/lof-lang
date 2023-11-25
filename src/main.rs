@@ -15,6 +15,9 @@ use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &str = r#"
 fn abs(i) {
+    if i > 100 {
+        return;
+    };
     if i < 0 {
         -i
     } else {
@@ -22,6 +25,7 @@ fn abs(i) {
     }
 }
 
+print abs(101);
 print abs(2);
 print abs(-3);
 

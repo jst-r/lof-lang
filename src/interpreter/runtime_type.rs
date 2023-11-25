@@ -3,7 +3,7 @@ use std::{fmt::Debug, iter::zip};
 use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
 use super::{
-    runtime_value::{RuntimeResult, RuntimeValue},
+    runtime_value::{RuntimeResult, RuntimeUnwind, RuntimeValue},
     Interpreter,
 };
 
@@ -32,6 +32,11 @@ impl Callable for Function {
         }
 
         let return_value = (&self.body).accept(interpreter);
+
+        let return_value = match return_value {
+            Err(RuntimeUnwind::Return(val)) => Ok(val),
+            _ => return_value,
+        };
 
         interpreter.environment.pop();
 

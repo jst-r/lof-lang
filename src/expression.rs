@@ -50,6 +50,10 @@ pub enum Expr {
         paren: Token,
         args: Vec<BoxExpr>,
     },
+    Return {
+        keyword: Token,
+        value: Option<BoxExpr>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -101,6 +105,8 @@ where
     fn visit_call(&mut self, callee: &BoxExpr, paren: &Token, args: &[BoxExpr])
         -> Self::ReturnType;
 
+    fn visit_return(&mut self, token: &Token, value: &Option<BoxExpr>) -> Self::ReturnType;
+
     fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         match expr.as_ref() {
             Expr::Binary {
@@ -135,6 +141,7 @@ where
                 paren,
                 args,
             } => self.visit_call(callee, paren, args),
+            Expr::Return { keyword, value } => self.visit_return(keyword, value),
         }
     }
 }

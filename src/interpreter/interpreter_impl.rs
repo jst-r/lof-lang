@@ -333,6 +333,15 @@ impl ExprVisitor for Interpreter {
 
         self.call(callee, args)
     }
+
+    fn visit_return(&mut self, _: &Token, value: &Option<Box<Expr>>) -> Self::ReturnType {
+        let value = match value {
+            Some(value) => value.accept(self)?,
+            None => Unit,
+        };
+
+        Err(super::runtime_value::RuntimeUnwind::Return(value))
+    }
 }
 
 impl StmtVisitor for Interpreter {
@@ -365,7 +374,7 @@ impl StmtVisitor for Interpreter {
     ) -> Self::ReturnType {
         let runtime_decl = Function(Rc::new(runtime_type::Function {
             name: name.clone(),
-            args: args.clone().into(),
+            args: args.into(),
             body: body.clone(),
         }));
 

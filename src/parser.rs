@@ -132,8 +132,14 @@ impl Parser {
             ParserError::UnexpectedToken(self.peek().clone()),
         )?;
 
-        let Expr::Block(body) = *self.block()? else {
-            panic!("function body isn't a block")
+        let body = self.block()?;
+
+        match body.as_ref() {
+            Expr::Block {
+                stmts: _,
+                return_expr: _,
+            } => {}
+            _ => panic!("function body isn't a block"),
         };
 
         Ok(Stmt::Fn { name, params, body })
@@ -156,9 +162,12 @@ impl Parser {
 
     fn expression_statement(&mut self) -> StmtResult {
         let expr = self.expression()?;
-        self.consume(TokenKind::Semicolon, self.err_missing_semi())?;
+        let has_semicolon = self.matches([TokenKind::Semicolon]);
 
-        Ok(Stmt::Expr(expr))
+        Ok(Stmt::Expr {
+            expr,
+            has_semicolon,
+        })
     }
 
     fn expression(&mut self) -> ExprResult {
@@ -186,9 +195,22 @@ impl Parser {
 
     fn block(&mut self) -> ExprResult {
         let mut stmts = vec![];
+        let mut return_expr = None;
 
         while !self.check(TokenKind::RightCurly) && !self.is_at_end() {
-            stmts.push(self.declaration()?);
+            let expr_or_stmt = self.declaration()?;
+            match expr_or_stmt {
+                Stmt::Expr {
+                    expr,
+                    has_semicolon: false,
+                } => {
+                    return_expr = Some(expr);
+                    break;
+                }
+                _ => {
+                    stmts.push(expr_or_stmt);
+                }
+            }
         }
 
         self.consume(
@@ -196,7 +218,7 @@ impl Parser {
             ParserError::UnclosedBlock(self.peek().clone()),
         )?;
 
-        wrap_expr(Expr::Block(stmts))
+        wrap_expr(Expr::Block { stmts, return_expr })
     }
 
     fn if_expr(&mut self) -> ExprResult {

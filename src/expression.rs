@@ -22,7 +22,10 @@ pub enum Expr {
         name: Token,
         value: BoxExpr,
     },
-    Block(Vec<Stmt>),
+    Block {
+        stmts: Vec<Stmt>,
+        return_expr: Option<BoxExpr>,
+    },
     If {
         condition: BoxExpr,
         then_branch: BoxExpr,
@@ -50,7 +53,6 @@ pub enum Expr {
 }
 
 #[derive(Debug, Clone)]
-
 pub enum LiteralExpr {
     Bool(bool),
     Integer(isize),
@@ -76,7 +78,7 @@ where
     fn visit_group(&mut self, expr: &BoxExpr) -> Self::ReturnType;
     fn visit_variable(&mut self, token: &Token) -> Self::ReturnType;
     fn visit_assignment(&mut self, name: &Token, value: &BoxExpr) -> Self::ReturnType;
-    fn visit_block(&mut self, stmts: &[Stmt]) -> Self::ReturnType;
+    fn visit_block(&mut self, stmts: &[Stmt], return_expr: &Option<BoxExpr>) -> Self::ReturnType;
     fn visit_if(
         &mut self,
         condition: &BoxExpr,
@@ -111,7 +113,7 @@ where
             Expr::Group(expr) => self.visit_group(expr),
             Expr::Variable(token) => self.visit_variable(token),
             Expr::Assignment { name, value } => self.visit_assignment(name, value),
-            Expr::Block(stmts) => self.visit_block(stmts),
+            Expr::Block { stmts, return_expr } => self.visit_block(stmts, return_expr),
             Expr::If {
                 condition,
                 then_branch,

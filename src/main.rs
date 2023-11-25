@@ -16,7 +16,27 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &str = r#"
-print now();
+fn abs(i) {
+    if i < 0 {
+        -i
+    } else {
+        i
+    }
+}
+
+print abs(2);
+print abs(-3);
+
+fn apply_twice(f, arg) {
+    var temp = f(arg);
+    f(temp)
+}
+
+fn square(n) {
+    n * n
+}
+
+print apply_twice(square, 2);
 "#;
 
 fn main() {

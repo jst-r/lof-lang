@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Debug, iter::zip, rc::Rc};
+use std::{collections::BTreeMap, fmt::Debug, rc::Rc};
 
 use crate::{
     expression::{BoxExpr, Expr, ExprVisitor, LiteralExpr},
@@ -318,15 +318,26 @@ impl ExprVisitor for Interpreter {
         self.environment.assign(name, value)
     }
 
-    fn visit_block(&mut self, stmts: &[crate::statement::Stmt]) -> Self::ReturnType {
+    fn visit_block(
+        &mut self,
+        stmts: &[crate::statement::Stmt],
+        return_expr: &Option<Box<Expr>>,
+    ) -> Self::ReturnType {
         self.environment.push();
 
         for stmt in stmts {
             stmt.accept(self);
         }
 
+        let return_value = if let Some(return_expr) = return_expr {
+            return_expr.accept(self)
+        } else {
+            RuntimeValue::Unit
+        };
+
         self.environment.pop();
-        RuntimeValue::Unit
+
+        return_value
     }
 
     fn visit_if(
@@ -400,12 +411,7 @@ impl ExprVisitor for Interpreter {
         }
     }
 
-    fn visit_call(
-        &mut self,
-        callee: &BoxExpr,
-        paren: &Token,
-        args: &[BoxExpr],
-    ) -> Self::ReturnType {
+    fn visit_call(&mut self, callee: &BoxExpr, _: &Token, args: &[BoxExpr]) -> Self::ReturnType {
         let args = args.iter().map(|arg| arg.accept(self)).collect::<Vec<_>>();
 
         self.call(&callee, args)
@@ -431,12 +437,16 @@ impl StmtVisitor for Interpreter {
         self.environment.define(name.lexeme.clone(), value);
     }
 
-    fn visit_function(&mut self, name: &Token, args: &[Token], body: &[Stmt]) -> Self::ReturnType {
-        // looks ugly but I dont want to do it better
+    fn visit_function(
+        &mut self,
+        name: &Token,
+        args: &[Token],
+        body: &Box<Expr>,
+    ) -> Self::ReturnType {
         let runtime_decl = Function(Rc::new(runtime_type::Function {
             name: name.clone(),
             args: args.clone().into(),
-            body: body.clone().into(),
+            body: body.clone(),
         }));
 
         self.environment.define(name.lexeme.clone(), runtime_decl);
@@ -447,7 +457,7 @@ impl StmtVisitor for Interpreter {
 pub mod runtime_type {
     use std::{fmt::Debug, iter::zip};
 
-    use crate::{expression::ExprVisitor, statement::Stmt, token::Token};
+    use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
     use super::{Interpreter, RuntimeValue};
 
@@ -462,7 +472,7 @@ pub mod runtime_type {
     pub struct Function {
         pub name: Token,
         pub args: Vec<Token>,
-        pub body: Vec<Stmt>,
+        pub body: BoxExpr,
     }
 
     impl Callable for Function {
@@ -475,7 +485,11 @@ pub mod runtime_type {
                     .define(arg_token.lexeme.clone(), arg_val);
             }
 
-            interpreter.visit_block(&self.body)
+            let return_value = (&self.body).accept(interpreter);
+
+            interpreter.environment.pop();
+
+            return_value
         }
 
         fn arity(&self) -> usize {
@@ -505,7 +519,8 @@ pub mod runtime_type {
     {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             f.debug_struct("NativeFunctionWrapper")
-                .field("function", &"native function")
+                .field("function", &"<native function>")
+                .field("arity", &N)
                 .finish()
         }
     }

@@ -3,6 +3,7 @@ use std::rc::Rc;
 use super::{
     environment::{EnvironmentTrait, WrappedEnv},
     globals::define_globals,
+    resolver::Resolver,
     runtime_type,
     runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
@@ -17,10 +18,15 @@ use crate::{
 
 use RuntimeValue::*;
 impl Interpreter {
-    pub fn new() -> Self {
+    pub fn new(resolver: Resolver) -> Self {
         let environment = WrappedEnv::default();
-        define_globals(environment.clone());
-        Self { environment }
+        let globals = environment.clone();
+        define_globals(globals.clone());
+        Self {
+            globals,
+            environment,
+            locals: resolver.resolutions,
+        }
     }
 
     pub fn interpret(&mut self, program: Vec<Stmt>) -> RuntimeResultNoValue {
@@ -168,6 +174,14 @@ impl Interpreter {
 
         callee.call(self, args)
     }
+
+    fn look_up_variable(&self, token: &Token) -> RuntimeResult {
+        if let Some(distance) = self.locals.get(&token.id) {
+            Ok(self.environment.get_at(token, *distance))
+        } else {
+            Ok(self.globals.get(token).expect("undefined variable"))
+        }
+    }
 }
 
 impl ExprVisitor for Interpreter {
@@ -227,17 +241,19 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_variable(&mut self, token: &Token) -> Self::ReturnType {
-        match self.environment.get(token) {
-            Some(t) => t.clone(),
-            Option::None => panic!("undefined variable"),
-        }
-        .into()
+        return self.look_up_variable(token);
     }
 
     fn visit_assignment(&mut self, name: &Token, value: &BoxExpr) -> Self::ReturnType {
         let value = value.accept(self)?;
 
-        self.environment.assign(name, value)
+        if let Some(distance) = self.locals.get(&name.id) {
+            self.environment.assign_at(name, value.clone(), *distance);
+        } else {
+            self.globals.assign(name, value.clone())?;
+        };
+
+        value.into()
     }
 
     fn visit_block(
@@ -400,6 +416,7 @@ impl StmtVisitor for Interpreter {
             Some(init) => init.accept(self),
             Option::None => Unit.into(),
         }?;
+
         self.environment.define(name.lexeme.clone(), value);
         Ok(())
     }

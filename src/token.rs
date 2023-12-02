@@ -64,6 +64,7 @@ pub struct TokenStruct {
     pub lexeme: Rc<str>,
     pub literal: LiteralValue,
     pub line: usize,
+    pub id: usize,
 }
 
 pub type Token = Rc<TokenStruct>;

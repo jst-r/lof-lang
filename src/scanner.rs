@@ -41,6 +41,7 @@ pub struct Scanner<'a> {
     start: usize,
     current: usize,
     line: usize,
+    current_id: usize,
 }
 
 pub type TokenSlice<'a> = &'a [Result<Token, ScannerError>];
@@ -55,6 +56,7 @@ impl<'a> Scanner<'a> {
             start: 0,
             current: 0,
             line: 0,
+            current_id: 0,
         }
     }
 
@@ -68,6 +70,7 @@ impl<'a> Scanner<'a> {
         self.start = 0;
         self.current = 0;
         self.line = 0;
+        self.current_id = 0;
     }
 
     pub fn scan_tokens(&'a mut self) -> TokenSlice<'a> {
@@ -75,11 +78,13 @@ impl<'a> Scanner<'a> {
             self.start = self.current;
             self.scan_token();
         }
+        self.current_id += 1;
         self.tokens.push(Ok(Rc::new(TokenStruct {
             kind: TokenKind::Eof,
             lexeme: Rc::from("\0"),
             literal: LiteralValue::None,
             line: self.line,
+            id: self.current_id,
         })));
         self.tokens.as_slice()
     }
@@ -179,11 +184,13 @@ impl<'a> Scanner<'a> {
 
     fn add_literal_token(&mut self, kind: TokenKind, value: LiteralValue) {
         let lexeme = self.current_slice().into();
+        self.current_id += 1;
         self.tokens.push(Ok(Rc::new(TokenStruct {
             kind,
             lexeme,
             literal: value,
             line: self.line,
+            id: self.current_id,
         })))
     }
 

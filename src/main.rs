@@ -7,6 +7,7 @@ mod statement;
 mod token;
 mod visitor;
 
+use interpreter::resolver::Resolver;
 use parser::Parser;
 use scanner::Scanner;
 use statement::Stmt;
@@ -27,10 +28,20 @@ fn make_counter() {
 
 var count = make_counter();
 
-for k in 0..100 {
+for k in 0..10 {
     count();
 };
 "#;
+
+// print "fib test";
+// fn fib(n) {
+//     if n <= 2 {
+//         1
+//     } else {
+//         fib(n - 1) + fib(n - 2)
+//     }
+// }
+// print fib(25);
 
 fn main() {
     run_code(SOURCE);
@@ -40,12 +51,24 @@ fn run_code(source: &str) {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens();
     let tokens: Vec<Token> = tokens.iter().map(|t| t.clone().unwrap()).collect();
-    let mut parser = Parser::new(tokens);
+
+    let mut parser = Parser::new(tokens.clone());
     let prog = parser.parse();
 
     let prog = prog.into_iter().map(|r| r.unwrap()).collect::<Vec<Stmt>>();
 
-    let mut interpreter = Interpreter::new();
+    let mut resolver = Resolver::default();
+    resolver.resolver_pass(&prog);
+
+    for (id, _) in &resolver.resolutions {
+        println!("{:?}", &tokens.iter().find(|t| t.id == *id));
+    }
+
+    // dbg!(&prog);
+
+    dbg!(&resolver.resolutions);
+
+    let mut interpreter = Interpreter::new(resolver);
 
     interpreter.interpret(prog).unwrap();
 }

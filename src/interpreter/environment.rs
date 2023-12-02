@@ -19,6 +19,9 @@ pub trait EnvironmentTrait {
     fn define(&mut self, name: Rc<str>, value: RuntimeValue);
     fn get(&self, name: &Token) -> Option<RuntimeValue>;
     fn assign(&mut self, name: &Token, value: RuntimeValue) -> RuntimeResult;
+    fn get_at(&self, name: &Token, distance: usize) -> RuntimeValue;
+    fn assign_at(&self, name: &Token, value: RuntimeValue, distance: usize);
+    fn ancestor(&self, distance: usize) -> Self;
 }
 
 impl EnvironmentTrait for WrappedEnv {
@@ -64,6 +67,33 @@ impl EnvironmentTrait for WrappedEnv {
         } else {
             panic!("undefined variable")
         }
+    }
+
+    fn get_at(&self, name: &Token, distance: usize) -> RuntimeValue {
+        self.ancestor(distance)
+            .borrow()
+            .values
+            .get(&name.lexeme)
+            .expect(format!("Variable not found (invalid resolution) {:?}", name).as_str())
+            .clone()
+    }
+
+    fn assign_at(&self, name: &Token, value: RuntimeValue, distance: usize) {
+        let ancestor = &self.ancestor(distance);
+
+        ancestor
+            .borrow_mut()
+            .values
+            .insert(name.lexeme.clone(), value);
+    }
+
+    fn ancestor(&self, distance: usize) -> Self {
+        let mut env = self.clone();
+        for i in 0..distance {
+            let enclosing = env.borrow().enclosing.clone().unwrap();
+            env = enclosing;
+        }
+        env
     }
 }
 

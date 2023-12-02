@@ -16,7 +16,10 @@ pub enum RuntimeValue {
 }
 
 #[derive(Error, Debug)]
-pub enum RuntimeError {}
+pub enum RuntimeError {
+    #[error("Undefined variable")]
+    UndefinedVariable,
+}
 
 #[derive(Debug)]
 pub enum RuntimeUnwind {
@@ -36,5 +39,11 @@ impl Into<RuntimeResult> for RuntimeValue {
 impl Into<RuntimeResult> for RuntimeError {
     fn into(self) -> RuntimeResult {
         Err(RuntimeUnwind::Err(self))
+    }
+}
+
+impl Into<RuntimeUnwind> for RuntimeError {
+    fn into(self) -> RuntimeUnwind {
+        RuntimeUnwind::Err(self)
     }
 }

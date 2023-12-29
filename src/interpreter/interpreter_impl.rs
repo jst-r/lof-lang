@@ -4,7 +4,7 @@ use super::{
     environment::{EnvironmentTrait, WrappedEnv},
     globals::define_globals,
     resolver::Resolver,
-    runtime_type,
+    runtime_type::{self, Class},
     runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
 };
@@ -435,6 +435,16 @@ impl StmtVisitor for Interpreter {
         }));
 
         self.environment.define(name.lexeme.clone(), runtime_decl);
+
+        Ok(())
+    }
+
+    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
+        self.environment.define(name.lexeme.clone(), Unit);
+
+        let class = RuntimeValue::Class(Rc::new(Class::new(name.clone())));
+
+        self.environment.assign(name, class)?;
 
         Ok(())
     }

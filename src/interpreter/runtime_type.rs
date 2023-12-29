@@ -78,3 +78,14 @@ impl<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult> Debug
             .finish()
     }
 }
+
+#[derive(Debug)]
+pub struct Class {
+    name: Token,
+}
+
+impl Class {
+    pub fn new(name: Token) -> Self {
+        Class { name }
+    }
+}

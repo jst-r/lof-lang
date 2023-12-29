@@ -15,22 +15,7 @@ use statement::Stmt;
 use crate::{interpreter::Interpreter, token::Token};
 
 const SOURCE: &str = r#"
-fn make_counter() {
-    var i = 0;
-
-    fn count() {
-        print i;
-        i = i + 1;
-    }
-
-    return count;
-}
-
-var count = make_counter();
-
-for k in 0..10 {
-    count();
-};
+class Test {}
 "#;
 
 // print "fib test";

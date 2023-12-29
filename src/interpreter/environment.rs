@@ -89,7 +89,7 @@ impl EnvironmentTrait for WrappedEnv {
 
     fn ancestor(&self, distance: usize) -> Self {
         let mut env = self.clone();
-        for i in 0..distance {
+        for _ in 0..distance {
             let enclosing = env.borrow().enclosing.clone().unwrap();
             env = enclosing;
         }
@@ -102,10 +102,9 @@ impl Environment {
         use RuntimeValue::*;
 
         match (prev, new) {
-            (String(_), String(_))
-            | (Integer(_), Integer(_))
-            | (Bool(_), Bool(_))
-            | (Unit, Unit) => true,
+            (String(_), String(_)) | (Integer(_), Integer(_)) | (Bool(_), Bool(_)) | (Unit, _) => {
+                true
+            }
             _ => false,
         }
     }

@@ -16,6 +16,10 @@ pub enum Stmt {
         params: Vec<Token>,
         body: BoxExpr,
     },
+    ClassDeclaration {
+        name: Token,
+        methods: Vec<Stmt>,
+    },
 }
 
 pub trait StmtVisitor {
@@ -25,6 +29,7 @@ pub trait StmtVisitor {
     fn visit_expr(&mut self, expr: &BoxExpr) -> Self::ReturnType;
     fn visit_var(&mut self, name: &Token, initializer: &Option<BoxExpr>) -> Self::ReturnType;
     fn visit_function(&mut self, name: &Token, args: &[Token], body: &BoxExpr) -> Self::ReturnType;
+    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType;
 
     fn visit(&mut self, stmt: &Stmt) -> Self::ReturnType {
         match stmt {
@@ -35,6 +40,7 @@ pub trait StmtVisitor {
             Stmt::Print(expr) => self.visit_print(expr),
             Stmt::Var { name, initializer } => self.visit_var(name, initializer),
             Stmt::Fn { name, params, body } => self.visit_function(name, params, body),
+            Stmt::ClassDeclaration { name, methods } => self.visit_class(name, methods),
         }
     }
 }

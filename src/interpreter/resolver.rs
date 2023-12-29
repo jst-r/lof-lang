@@ -186,4 +186,9 @@ impl StmtVisitor for Resolver {
 
         self.resolve_function(args, body);
     }
+
+    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
+        self.declare(name);
+        self.define(name);
+    }
 }

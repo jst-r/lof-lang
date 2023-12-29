@@ -65,6 +65,8 @@ impl Parser {
             self.var_declaration()
         } else if self.matches([TokenKind::Fn]) {
             self.fn_declaration()
+        } else if self.matches([TokenKind::Class]) {
+            self.class_declaration()
         } else {
             self.statement()
         }
@@ -145,6 +147,33 @@ impl Parser {
         };
 
         Ok(Stmt::Fn { name, params, body })
+    }
+
+    fn class_declaration(&mut self) -> Result<Stmt, ParserError> {
+        let name = self
+            .consume(
+                TokenKind::Identifier,
+                ParserError::UnexpectedToken(self.peek().clone()),
+            )?
+            .clone();
+
+        self.consume(
+            TokenKind::LeftCurly,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        let mut methods = vec![];
+
+        while !(self.check(TokenKind::RightCurly)) && !self.is_at_end() {
+            methods.push(self.fn_declaration()?);
+        }
+
+        self.consume(
+            TokenKind::RightCurly,
+            ParserError::UnexpectedToken(self.peek().clone()),
+        )?;
+
+        Ok(Stmt::ClassDeclaration { name, methods })
     }
 
     fn statement(&mut self) -> StmtResult {

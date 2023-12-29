@@ -356,12 +356,9 @@ impl ExprVisitor for Interpreter {
         let mut result = None;
         for i in low..high {
             self.environment.assign(identifier, Integer(i)).unwrap(); // It is always defined
-            match body.accept(self) {
-                Err(e) => {
-                    result = Some(Err(e));
-                    break;
-                }
-                Ok(_) => {}
+            if let Err(e) = body.accept(self) {
+                result = Some(Err(e));
+                break;
             };
         }
 

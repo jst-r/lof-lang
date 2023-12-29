@@ -31,20 +31,20 @@ pub enum RuntimeUnwind {
 pub type RuntimeResult = Result<RuntimeValue, RuntimeUnwind>;
 pub type RuntimeResultNoValue = Result<(), RuntimeUnwind>;
 
-impl Into<RuntimeResult> for RuntimeValue {
-    fn into(self) -> RuntimeResult {
-        Ok(self)
+impl From<RuntimeValue> for RuntimeResult {
+    fn from(val: RuntimeValue) -> Self {
+        Ok(val)
     }
 }
 
-impl Into<RuntimeResult> for RuntimeError {
-    fn into(self) -> RuntimeResult {
-        Err(RuntimeUnwind::Err(self))
+impl From<RuntimeError> for RuntimeResult {
+    fn from(val: RuntimeError) -> Self {
+        Err(RuntimeUnwind::Err(val))
     }
 }
 
-impl Into<RuntimeUnwind> for RuntimeError {
-    fn into(self) -> RuntimeUnwind {
-        RuntimeUnwind::Err(self)
+impl From<RuntimeError> for RuntimeUnwind {
+    fn from(val: RuntimeError) -> Self {
+        RuntimeUnwind::Err(val)
     }
 }

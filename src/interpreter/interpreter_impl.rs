@@ -212,7 +212,6 @@ impl ExprVisitor for Interpreter {
             DotDot => Interpreter::binary_dot_dot(left, right),
             _ => panic!("Invalid binary operator"),
         }
-        .into()
     }
 
     fn visit_unary(&mut self, operator: &Token, right: &BoxExpr) -> Self::ReturnType {
@@ -223,7 +222,6 @@ impl ExprVisitor for Interpreter {
             TokenKind::Minus => Interpreter::unary_minus(right),
             _ => panic!("Invalid unary operator"),
         }
-        .into()
     }
 
     fn visit_literal(&mut self, literal: &LiteralExpr) -> Self::ReturnType {
@@ -241,7 +239,7 @@ impl ExprVisitor for Interpreter {
     }
 
     fn visit_variable(&mut self, token: &Token) -> Self::ReturnType {
-        return self.look_up_variable(token);
+        self.look_up_variable(token)
     }
 
     fn visit_assignment(&mut self, name: &Token, value: &BoxExpr) -> Self::ReturnType {
@@ -266,12 +264,9 @@ impl ExprVisitor for Interpreter {
 
         let mut result = None;
         for stmt in stmts {
-            match stmt.accept(self) {
-                Err(e) => {
-                    result = Some(e);
-                    break;
-                }
-                _ => {}
+            if let Err(e) = stmt.accept(self) {
+                result = Some(e);
+                break;
             };
         }
 
@@ -372,7 +367,7 @@ impl ExprVisitor for Interpreter {
 
         self.environment = prev_env;
 
-        if let None = result {
+        if result.is_none() {
             result = Some(Ok(Unit));
         }
 
@@ -439,7 +434,7 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
+    fn visit_class(&mut self, name: &Token, _methods: &[Stmt]) -> Self::ReturnType {
         self.environment.define(name.lexeme.clone(), Unit);
 
         let class = RuntimeValue::Class(Rc::new(Class::new(name.clone())));

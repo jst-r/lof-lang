@@ -43,7 +43,7 @@ impl EnvironmentTrait for WrappedEnv {
 
     fn get(&self, name: &Token) -> Option<RuntimeValue> {
         if let Some(val) = self.borrow().values.get(&name.lexeme) {
-            return Some(val.clone());
+            Some(val.clone())
         } else if let Some(enclosing) = &self.borrow().enclosing {
             enclosing.get(name)
         } else {
@@ -74,7 +74,7 @@ impl EnvironmentTrait for WrappedEnv {
             .borrow()
             .values
             .get(&name.lexeme)
-            .expect(format!("Variable not found (invalid resolution) {:?}", name).as_str())
+            .unwrap_or_else(|| panic!("Variable not found (invalid resolution) {:?}", name))
             .clone()
     }
 
@@ -101,11 +101,9 @@ impl Environment {
     fn check_assignment_type(prev: RuntimeValue, new: &RuntimeValue) -> bool {
         use RuntimeValue::*;
 
-        match (prev, new) {
-            (String(_), String(_)) | (Integer(_), Integer(_)) | (Bool(_), Bool(_)) | (Unit, _) => {
-                true
-            }
-            _ => false,
-        }
+        matches!(
+            (prev, new),
+            (String(_), String(_)) | (Integer(_), Integer(_)) | (Bool(_), Bool(_)) | (Unit, _)
+        )
     }
 }

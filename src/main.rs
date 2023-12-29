@@ -45,7 +45,7 @@ fn run_code(source: &str) {
     let mut resolver = Resolver::default();
     resolver.resolver_pass(&prog);
 
-    for (id, _) in &resolver.resolutions {
+    for id in resolver.resolutions.keys() {
         println!("{:?}", &tokens.iter().find(|t| t.id == *id));
     }
 

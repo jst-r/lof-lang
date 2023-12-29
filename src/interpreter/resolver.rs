@@ -19,19 +19,19 @@ impl Resolver {
         }
     }
 
-    fn begin_scope(&mut self) -> () {
+    fn begin_scope(&mut self) {
         self.scopes.push(Default::default());
     }
 
-    fn end_scope(&mut self) -> () {
+    fn end_scope(&mut self) {
         self.scopes.pop();
     }
 
-    fn add_resolution(&mut self, token: &Token, depth: usize) -> () {
+    fn add_resolution(&mut self, token: &Token, depth: usize) {
         self.resolutions.insert(token.id, depth);
     }
 
-    fn declare(&mut self, name: &Token) -> () {
+    fn declare(&mut self, name: &Token) {
         if self.scopes.is_empty() {
             return;
         }
@@ -42,7 +42,7 @@ impl Resolver {
             .insert(name.lexeme.clone(), false);
     }
 
-    fn define(&mut self, name: &Token) -> () {
+    fn define(&mut self, name: &Token) {
         if self.scopes.is_empty() {
             return;
         }
@@ -53,7 +53,7 @@ impl Resolver {
             .insert(name.lexeme.clone(), true);
     }
 
-    fn resolve_local(&mut self, token: &Token) -> () {
+    fn resolve_local(&mut self, token: &Token) {
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].get(&token.lexeme).is_some() {
                 self.add_resolution(token, self.scopes.len() - i - 1);
@@ -62,7 +62,7 @@ impl Resolver {
         }
     }
 
-    fn resolve_function(&mut self, args: &[Token], body: &BoxExpr) -> () {
+    fn resolve_function(&mut self, args: &[Token], body: &BoxExpr) {
         self.begin_scope();
         for arg in args {
             self.declare(arg);
@@ -112,7 +112,7 @@ impl ExprVisitor for Resolver {
             stmt.accept(self);
         }
 
-        return_expr.as_ref().map(|e| (e).accept(self));
+        if let Some(e) = return_expr.as_ref() { (e).accept(self) }
 
         self.end_scope();
     }
@@ -125,7 +125,7 @@ impl ExprVisitor for Resolver {
     ) -> Self::ReturnType {
         condition.accept(self);
         then_branch.accept(self);
-        else_branch.as_ref().map(|e| e.accept(self));
+        if let Some(e) = else_branch.as_ref() { e.accept(self) }
     }
 
     fn visit_logical(&mut self, left: &BoxExpr, _: &Token, right: &BoxExpr) -> Self::ReturnType {
@@ -157,7 +157,7 @@ impl ExprVisitor for Resolver {
     }
 
     fn visit_return(&mut self, _: &Token, value: &Option<BoxExpr>) -> Self::ReturnType {
-        value.as_ref().map(|e| e.accept(self));
+        if let Some(e) = value.as_ref() { e.accept(self) }
     }
 }
 
@@ -187,7 +187,7 @@ impl StmtVisitor for Resolver {
         self.resolve_function(args, body);
     }
 
-    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
+    fn visit_class(&mut self, name: &Token, _methods: &[Stmt]) -> Self::ReturnType {
         self.declare(name);
         self.define(name);
     }

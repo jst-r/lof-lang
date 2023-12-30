@@ -1,4 +1,4 @@
-use std::{fmt::Debug, iter::zip};
+use std::{fmt::Debug, iter::zip, rc::Rc};
 
 use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
@@ -79,7 +79,7 @@ impl<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult> Debug
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Class {
     name: Token,
 }
@@ -88,4 +88,21 @@ impl Class {
     pub fn new(name: Token) -> Self {
         Class { name }
     }
+}
+
+impl Callable for Class {
+    fn call(&self, _: &mut Interpreter, _: Vec<RuntimeValue>) -> RuntimeResult {
+        Ok(RuntimeValue::Instance(Rc::new(Instance {
+            class: Rc::new(self.clone()),
+        })))
+    }
+
+    fn arity(&self) -> usize {
+        0
+    }
+}
+
+#[derive(Debug)]
+pub struct Instance {
+    class: Rc<Class>,
 }

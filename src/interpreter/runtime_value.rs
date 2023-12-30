@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use thiserror::Error;
 
-use super::runtime_type::{self, Class};
+use super::runtime_type::{self, Class, Instance};
 
 #[derive(Debug, Clone)]
 pub enum RuntimeValue {
@@ -11,6 +11,7 @@ pub enum RuntimeValue {
     Bool(bool),
     Function(Rc<dyn runtime_type::Callable>), // Functions are boxed to avoid bloating the enum size
     Class(Rc<Class>),
+    Instance(Rc<Instance>),
     // those are to be removed when structs and enums are implemented
     Range(isize, isize),
     Unit,

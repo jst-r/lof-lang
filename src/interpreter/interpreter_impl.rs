@@ -4,7 +4,7 @@ use super::{
     environment::{EnvironmentTrait, WrappedEnv},
     globals::define_globals,
     resolver::Resolver,
-    runtime_type::{self, Class},
+    runtime_type::{self, Callable, Class},
     runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
 };
@@ -164,8 +164,10 @@ impl Interpreter {
     }
 
     fn call(&mut self, callee: &BoxExpr, args: Vec<RuntimeValue>) -> RuntimeResult {
-        let RuntimeValue::Function(callee) = callee.accept(self)? else {
-            panic!("trying to call not callable")
+        let callee = match callee.accept(self)? {
+            Class(c) => c as Rc<dyn Callable>,
+            Function(c) => c,
+            _ => panic!("trying to call not callable"),
         };
 
         if callee.arity() != args.len() {

@@ -4,7 +4,7 @@ use super::{
     environment::{EnvironmentTrait, WrappedEnv},
     globals::define_globals,
     resolver::Resolver,
-    runtime_type::{self, Callable, Class},
+    runtime_type::{self, Callable, Class, Instance},
     runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
 };
@@ -389,6 +389,30 @@ impl ExprVisitor for Interpreter {
         };
 
         Err(super::runtime_value::RuntimeUnwind::Return(value))
+    }
+
+    fn visit_field_access(&mut self, object: &BoxExpr, name: &Token) -> Self::ReturnType {
+        let Instance(object) = object.accept(self)? else {
+            panic!("Only instances have fields")
+        };
+
+        let x = Ok(object.borrow().get(name).clone());
+        x
+    }
+
+    fn visit_filed_set(
+        &mut self,
+        object: &BoxExpr,
+        name: &Token,
+        value: &BoxExpr,
+    ) -> Self::ReturnType {
+        let Instance(object) = object.accept(self)? else {
+            panic!("Only instances have fields");
+        };
+
+        let value = value.accept(self)?;
+        object.borrow_mut().set(name, value.clone());
+        Ok(value)
     }
 }
 

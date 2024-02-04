@@ -17,7 +17,11 @@ use crate::{interpreter::Interpreter, token::Token};
 const SOURCE: &str = r#"
 class Test {}
 
-print(Test());
+var a = Test();
+a.b = 1;
+a.b = a.b + 1;
+
+print(a.b);
 "#;
 
 // print "fib test";

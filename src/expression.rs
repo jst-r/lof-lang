@@ -50,6 +50,15 @@ pub enum Expr {
         paren: Token,
         args: Vec<BoxExpr>,
     },
+    FieldAccess {
+        object: BoxExpr,
+        name: Token,
+    },
+    FieldSet {
+        object: BoxExpr,
+        name: Token,
+        value: BoxExpr,
+    },
     Return {
         keyword: Token,
         value: Option<BoxExpr>,
@@ -107,6 +116,15 @@ where
 
     fn visit_return(&mut self, token: &Token, value: &Option<BoxExpr>) -> Self::ReturnType;
 
+    fn visit_field_access(&mut self, object: &BoxExpr, name: &Token) -> Self::ReturnType;
+
+    fn visit_filed_set(
+        &mut self,
+        object: &BoxExpr,
+        name: &Token,
+        value: &BoxExpr,
+    ) -> Self::ReturnType;
+
     fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         match expr.as_ref() {
             Expr::Binary {
@@ -142,6 +160,12 @@ where
                 args,
             } => self.visit_call(callee, paren, args),
             Expr::Return { keyword, value } => self.visit_return(keyword, value),
+            Expr::FieldAccess { object, name } => self.visit_field_access(object, name),
+            Expr::FieldSet {
+                object,
+                name,
+                value,
+            } => self.visit_filed_set(object, name, value),
         }
     }
 }

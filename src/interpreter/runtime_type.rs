@@ -1,6 +1,10 @@
-use std::{fmt::Debug, iter::zip, rc::Rc};
+use std::{collections::BTreeMap, fmt::Debug, iter::zip, rc::Rc};
 
-use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
+use crate::{
+    expression::BoxExpr,
+    token::{self, Token},
+    visitor::AcceptMut,
+};
 
 use super::{
     environment::{EnvironmentTrait, WrappedEnv},
@@ -92,9 +96,13 @@ impl Class {
 
 impl Callable for Class {
     fn call(&self, _: &mut Interpreter, _: Vec<RuntimeValue>) -> RuntimeResult {
-        Ok(RuntimeValue::Instance(Rc::new(Instance {
-            class: Rc::new(self.clone()),
-        })))
+        Ok(RuntimeValue::Instance(Rc::new(
+            Instance {
+                class: Rc::new(self.clone()),
+                fields: Default::default(),
+            }
+            .into(),
+        )))
     }
 
     fn arity(&self) -> usize {
@@ -105,4 +113,18 @@ impl Callable for Class {
 #[derive(Debug)]
 pub struct Instance {
     class: Rc<Class>,
+    fields: BTreeMap<Rc<str>, RuntimeValue>,
+}
+
+impl Instance {
+    pub fn get(&self, name: &Token) -> RuntimeValue {
+        self.fields
+            .get(&name.lexeme)
+            .expect("Undefined property")
+            .clone()
+    }
+
+    pub fn set(&mut self, name: &Token, value: RuntimeValue) {
+        self.fields.insert(name.lexeme.clone(), value);
+    }
 }

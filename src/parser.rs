@@ -340,20 +340,23 @@ impl Parser {
     fn assignment(&mut self) -> ExprResult {
         let expr = self.range()?;
 
-        if self.matches([TokenKind::Equal]) {
-            let equals = self.previous().clone();
-            let value = self.assignment()?;
+        if !self.matches([TokenKind::Equal]) {
+            return Ok(expr);
+        }
 
-            return if let Expr::Variable(name) = expr.as_ref() {
-                wrap_expr(Expr::Assignment {
-                    name: name.clone(),
-                    value,
-                })
-            } else {
-                Err(ParserError::InvalidAssignmentTarget(equals.clone()))
-            };
+        let equals = self.previous().clone();
+        let value = self.assignment()?;
+
+        if let Expr::Variable(name) = *expr {
+            wrap_expr(Expr::Assignment { name: name, value })
+        } else if let Expr::FieldAccess { object, name } = *expr {
+            wrap_expr(Expr::FieldSet {
+                object,
+                name,
+                value,
+            })
         } else {
-            Ok(expr)
+            Err(ParserError::InvalidAssignmentTarget(equals.clone()))
         }
     }
 
@@ -494,6 +497,14 @@ impl Parser {
         loop {
             if self.matches([TokenKind::LeftParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.matches([TokenKind::Dot]) {
+                let name = self
+                    .consume(
+                        TokenKind::Identifier,
+                        ParserError::UnexpectedToken(self.peek().clone()),
+                    )?
+                    .clone();
+                expr = Box::new(Expr::FieldAccess { object: expr, name });
             } else {
                 break;
             }

@@ -112,7 +112,9 @@ impl ExprVisitor for Resolver {
             stmt.accept(self);
         }
 
-        if let Some(e) = return_expr.as_ref() { (e).accept(self) }
+        if let Some(e) = return_expr.as_ref() {
+            (e).accept(self)
+        }
 
         self.end_scope();
     }
@@ -125,7 +127,9 @@ impl ExprVisitor for Resolver {
     ) -> Self::ReturnType {
         condition.accept(self);
         then_branch.accept(self);
-        if let Some(e) = else_branch.as_ref() { e.accept(self) }
+        if let Some(e) = else_branch.as_ref() {
+            e.accept(self)
+        }
     }
 
     fn visit_logical(&mut self, left: &BoxExpr, _: &Token, right: &BoxExpr) -> Self::ReturnType {
@@ -157,7 +161,23 @@ impl ExprVisitor for Resolver {
     }
 
     fn visit_return(&mut self, _: &Token, value: &Option<BoxExpr>) -> Self::ReturnType {
-        if let Some(e) = value.as_ref() { e.accept(self) }
+        if let Some(e) = value.as_ref() {
+            e.accept(self)
+        }
+    }
+
+    fn visit_field_access(&mut self, object: &BoxExpr, name: &Token) -> Self::ReturnType {
+        object.accept(self);
+    }
+
+    fn visit_filed_set(
+        &mut self,
+        object: &BoxExpr,
+        name: &Token,
+        value: &BoxExpr,
+    ) -> Self::ReturnType {
+        value.accept(self);
+        object.accept(self);
     }
 }
 

@@ -1,7 +1,7 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 use thiserror::Error;
 
-use super::runtime_type::{self, Class, Instance};
+use super::runtime_type::{Callable, Class, Instance};
 
 #[derive(Debug, Clone)]
 pub enum RuntimeValue {
@@ -9,9 +9,9 @@ pub enum RuntimeValue {
     Integer(isize),
     Float(f64),
     Bool(bool),
-    Function(Rc<dyn runtime_type::Callable>), // Functions are boxed to avoid bloating the enum size
+    Function(Rc<dyn Callable>), // Functions are boxed to avoid bloating the enum size
     Class(Rc<Class>),
-    Instance(Rc<Instance>),
+    Instance(Rc<RefCell<Instance>>),
     // those are to be removed when structs and enums are implemented
     Range(isize, isize),
     Unit,

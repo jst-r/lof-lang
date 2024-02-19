@@ -8,7 +8,7 @@ use crate::{
     token::{LiteralValue, Token, TokenKind},
 };
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ParserError {
     #[error("unexpected token: {0:?}")]
     UnexpectedToken(Token),
@@ -201,7 +201,7 @@ impl Parser {
         })
     }
 
-    fn expression(&mut self) -> ExprResult {
+    pub fn expression(&mut self) -> ExprResult {
         match self.peek().kind {
             TokenKind::LeftCurly | TokenKind::If | TokenKind::While | TokenKind::For => {
                 self.expression_with_block()

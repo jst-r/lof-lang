@@ -25,7 +25,7 @@ lazy_static! {
     ]);
 }
 
-#[derive(Error, Debug, Clone, Copy)]
+#[derive(Error, Debug, Clone, Copy, PartialEq)]
 pub enum ScannerError {
     #[error("unexpected token")]
     UnexpectedToken,

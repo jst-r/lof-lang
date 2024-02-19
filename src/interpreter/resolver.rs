@@ -166,14 +166,14 @@ impl ExprVisitor for Resolver {
         }
     }
 
-    fn visit_field_access(&mut self, object: &BoxExpr, name: &Token) -> Self::ReturnType {
+    fn visit_field_access(&mut self, object: &BoxExpr, _name: &Token) -> Self::ReturnType {
         object.accept(self);
     }
 
     fn visit_filed_set(
         &mut self,
         object: &BoxExpr,
-        name: &Token,
+        _name: &Token,
         value: &BoxExpr,
     ) -> Self::ReturnType {
         value.accept(self);

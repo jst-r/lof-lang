@@ -17,15 +17,17 @@ pub enum RuntimeValue {
     Unit,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum RuntimeError {
     #[error("Undefined variable")]
     UndefinedVariable,
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum RuntimeUnwind {
+    #[error(transparent)]
     Err(RuntimeError),
+    #[error("")]
     Return(RuntimeValue),
 }
 

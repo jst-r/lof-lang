@@ -4,7 +4,7 @@ use super::{
     environment::{EnvironmentTrait, WrappedEnv},
     globals::define_globals,
     resolver::Resolver,
-    runtime_type::{self, Callable, Class, Instance},
+    runtime_type::{self, Callable, Class},
     runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
 };

@@ -21,6 +21,10 @@ pub enum RuntimeValue {
 pub enum RuntimeError {
     #[error("Undefined variable")]
     UndefinedVariable,
+    #[error("Assertion error: {0}")]
+    AssertionError(Rc<str>),
+    #[error("Type error")]
+    TypeError,
 }
 
 #[derive(Error, Debug)]

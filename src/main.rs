@@ -6,6 +6,9 @@ a.b = 1;
 a.b = a.b + 1;
 
 print(a.b);
+
+assert(a.b == 2, "");
+assert(a.b != 2, "This should fail");
 "#;
 
 // print "fib test";
@@ -19,7 +22,7 @@ print(a.b);
 // print fib(25);
 
 fn main() {
-    // lof_lang::run_code(SOURCE)?;
-    dbg!(lof_lang::parse_expression("1 + 2"));
-    dbg!(lof_lang::run_expr("1+2"));
+    lof_lang::run_code(SOURCE);
+    // dbg!(lof_lang::parse_expression("1 + 2"));
+    // dbg!(lof_lang::run_expr("1+2"));
 }

@@ -1,0 +1,9 @@
+class Test {}
+var a = Test();
+a.b = 1;
+
+assert(a.b == 1, "")
+
+a.b = a.b + 1;
+
+assert(a.b == 2, "")

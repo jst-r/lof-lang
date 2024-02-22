@@ -67,7 +67,7 @@ pub fn run_code(source: &str) -> Result<(), LofError> {
 
     // dbg!(&prog);
 
-    dbg!(&resolver.resolutions);
+    // dbg!(&resolver.resolutions);
 
     let mut interpreter = Interpreter::new(resolver);
 

@@ -5,7 +5,7 @@ use super::{
     globals::define_globals,
     resolver::Resolver,
     runtime_type::{self, Callable, Class},
-    runtime_value::{RuntimeResult, RuntimeResultNoValue, RuntimeValue},
+    runtime_value::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeValue},
     Interpreter,
 };
 
@@ -181,7 +181,9 @@ impl Interpreter {
         if let Some(distance) = self.locals.get(&token.id) {
             Ok(self.environment.get_at(token, *distance))
         } else {
-            Ok(self.globals.get(token).expect("undefined variable"))
+            self.globals
+                .get(token)
+                .ok_or(RuntimeError::UndefinedVariable(token.clone()).into())
         }
     }
 }

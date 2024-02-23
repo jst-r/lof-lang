@@ -1,9 +1,28 @@
 class Test {}
+
 var a = Test();
 a.b = 1;
-
-assert(a.b == 1, "")
+assert(a.b == 1, "");
 
 a.b = a.b + 1;
+assert(a.b == 2, "");
 
-assert(a.b == 2, "")
+// a fake method
+
+fn f() {
+    return "foo";
+}
+a.f = f;
+print(a.f());
+assert(a.f() == "foo", "");
+
+// Methods
+class HasMethods {
+    hi() {
+        return "hi!";
+    }
+}
+
+var b = HasMethods();
+
+print(b.hi());

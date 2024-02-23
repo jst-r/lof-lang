@@ -1,10 +1,6 @@
 use std::{collections::BTreeMap, fmt::Debug, iter::zip, rc::Rc};
 
-use crate::{
-    expression::BoxExpr,
-    token::{self, Token},
-    visitor::AcceptMut,
-};
+use crate::{expression::BoxExpr, token::Token, visitor::AcceptMut};
 
 use super::{
     environment::{EnvironmentTrait, WrappedEnv},

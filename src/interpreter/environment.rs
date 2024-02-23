@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use super::runtime_value::{RuntimeResult, RuntimeValue};
+use super::runtime_value::{RuntimeError, RuntimeResult, RuntimeValue};
 
 use crate::token::Token;
 
@@ -65,7 +65,7 @@ impl EnvironmentTrait for WrappedEnv {
         } else if let Some(enclosing) = &mut self.borrow_mut().enclosing {
             enclosing.assign(name, value)
         } else {
-            panic!("undefined variable")
+            RuntimeError::UndefinedVariable(name.clone()).into()
         }
     }
 

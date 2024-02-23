@@ -1,7 +1,5 @@
 use lof_lang::{interpreter::runtime_value::RuntimeValue, LofError};
 
-type UnitResult = Result<(), ()>;
-
 #[test]
 fn basic_e2e() -> Result<(), ()> {
     match lof_lang::run_expr("1 + 2") {
@@ -13,4 +11,12 @@ fn basic_e2e() -> Result<(), ()> {
 #[test]
 fn class() -> Result<(), LofError> {
     lof_lang::run_code(include_str!("lof_native/class.lof"))
+}
+
+#[test]
+fn comment() -> Result<(), LofError> {
+    lof_lang::run_code(
+        r#"// This is a comment
+    "#,
+    )
 }

@@ -1,5 +1,5 @@
 use expression::{BoxExpr, ExprVisitor};
-use interpreter::runtime_value::{RuntimeError, RuntimeResult, RuntimeUnwind, RuntimeValue};
+use interpreter::runtime_value::{RuntimeUnwind, RuntimeValue};
 use scanner::ScannerError;
 use thiserror::Error;
 
@@ -78,10 +78,10 @@ pub fn run_code(source: &str) -> Result<(), LofError> {
 
 #[derive(Error, Debug)]
 pub enum LofError {
-    #[error("Parser error")]
-    ParserError(#[from] ParserError),
     #[error("Scanner error")]
     ScannerError(#[from] ScannerError),
+    #[error("Parser error")]
+    ParserError(#[from] ParserError),
     #[error("RuntimeError")]
     RuntimeError(#[from] RuntimeUnwind),
 }

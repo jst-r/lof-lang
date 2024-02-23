@@ -1,6 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 use thiserror::Error;
 
+use crate::token::Token;
+
 use super::runtime_type::{Callable, Class, Instance};
 
 #[derive(Debug, Clone)]
@@ -19,8 +21,8 @@ pub enum RuntimeValue {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum RuntimeError {
-    #[error("Undefined variable")]
-    UndefinedVariable,
+    #[error("Undefined variable at token {0:?}")]
+    UndefinedVariable(Token),
     #[error("Assertion error: {0}")]
     AssertionError(Rc<str>),
     #[error("Type error")]

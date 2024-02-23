@@ -7,8 +7,18 @@ use super::{
 };
 
 pub fn define_globals(mut env: WrappedEnv) {
-    env.define(Rc::from(get_function_name(time)), wrap_native_fn(time));
-    env.define(Rc::from(get_function_name(assert)), wrap_native_fn(assert));
+    wrap_and_define_native_function(&mut env, time);
+    wrap_and_define_native_function(&mut env, assert);
+}
+
+fn wrap_and_define_native_function<
+    const N: usize,
+    F: Fn([RuntimeValue; N]) -> RuntimeResult + 'static + Clone,
+>(
+    env: &mut WrappedEnv,
+    f: F,
+) {
+    env.define(Rc::from(get_function_name(f.clone())), wrap_native_fn(f));
 }
 
 fn wrap_native_fn<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult + 'static>(
@@ -55,6 +65,6 @@ fn assert(args: [RuntimeValue; 2]) -> RuntimeResult {
 mod test {
     #[test]
     fn get_function_name() {
-        dbg!(super::get_function_name(super::time));
+        assert_eq!(super::get_function_name(super::time), "time");
     }
 }

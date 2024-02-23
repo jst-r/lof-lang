@@ -348,7 +348,7 @@ impl Parser {
         let value = self.assignment()?;
 
         if let Expr::Variable(name) = *expr {
-            wrap_expr(Expr::Assignment { name: name, value })
+            wrap_expr(Expr::Assignment { name, value })
         } else if let Expr::FieldAccess { object, name } = *expr {
             wrap_expr(Expr::FieldSet {
                 object,

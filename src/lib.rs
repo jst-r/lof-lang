@@ -26,7 +26,7 @@ pub fn parse_program(source: &str) -> Result<Vec<Stmt>, LofError> {
     let tokens = scanner.scan_tokens();
     let tokens: Vec<Token> = {
         let tok_result: Result<Vec<Token>, ScannerError> =
-            tokens.iter().map(|t| t.clone()).collect();
+            tokens.iter().cloned().collect();
         tok_result?
     };
 
@@ -41,7 +41,7 @@ pub fn parse_expression(source: &str) -> Result<BoxExpr, LofError> {
     let tokens = scanner.scan_tokens();
     let tokens: Vec<Token> = {
         let tok_result: Result<Vec<Token>, ScannerError> =
-            tokens.iter().map(|t| t.clone()).collect();
+            tokens.iter().cloned().collect();
         tok_result?
     };
 

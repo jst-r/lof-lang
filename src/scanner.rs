@@ -111,7 +111,7 @@ impl<'a> Scanner<'a> {
             '>' => self.add_token_lookahead('=', TokenKind::GreaterEqual, TokenKind::Greater),
             '/' => {
                 if self.matches('/') {
-                    while self.peek() != Some('\n') && self.is_at_end() {
+                    while self.peek() != Some('\n') && !self.is_at_end() {
                         self.advance();
                     }
                 } else {

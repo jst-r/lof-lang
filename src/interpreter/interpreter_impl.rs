@@ -398,8 +398,12 @@ impl ExprVisitor for Interpreter {
             panic!("Only instances have fields")
         };
 
-        let x = Ok(object.borrow().get(name).clone());
-        x
+        let opt_object = object.borrow().get(name);
+
+        match opt_object {
+            Some(val) => val.clone().into(),
+            None => todo!(),
+        }
     }
 
     fn visit_filed_set(
@@ -459,7 +463,7 @@ impl StmtVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_class(&mut self, name: &Token, _methods: &[Stmt]) -> Self::ReturnType {
+    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
         self.environment.define(name.lexeme.clone(), Unit);
 
         let class = RuntimeValue::Class(Rc::new(Class::new(name.clone())));

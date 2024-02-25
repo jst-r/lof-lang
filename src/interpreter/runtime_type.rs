@@ -82,11 +82,19 @@ impl<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult> Debug
 #[derive(Debug, Clone)]
 pub struct Class {
     name: Token,
+    methods: BTreeMap<Rc<str>, RuntimeValue>,
 }
 
 impl Class {
     pub fn new(name: Token) -> Self {
-        Class { name }
+        Class {
+            name,
+            methods: Default::default(),
+        }
+    }
+
+    pub fn find_method(&self, name: &Rc<str>) -> Option<&RuntimeValue> {
+        self.methods.get(name)
     }
 }
 
@@ -113,11 +121,17 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn get(&self, name: &Token) -> RuntimeValue {
-        self.fields
-            .get(&name.lexeme)
-            .expect("Undefined property")
-            .clone()
+    pub fn get(&self, name: &Token) -> Option<RuntimeValue> {
+        let name = &name.lexeme;
+
+        if let Some(field) = self.fields.get(name) {
+            return field.clone().into();
+        }
+        if let Some(method) = self.class.find_method(name) {
+            return method.clone().into();
+        }
+
+        None
     }
 
     pub fn set(&mut self, name: &Token, value: RuntimeValue) {

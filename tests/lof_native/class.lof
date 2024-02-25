@@ -25,4 +25,4 @@ class HasMethods {
 
 var b = HasMethods();
 
-print(b.hi());
+assert(b.hi() == "hi!", "");

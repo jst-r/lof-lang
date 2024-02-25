@@ -14,6 +14,11 @@ fn class() -> Result<(), LofError> {
 }
 
 #[test]
+fn fibonacci() -> Result<(), LofError> {
+    lof_lang::run_code(include_str!("lof_native/fibonacci.lof"))
+}
+
+#[test]
 fn comment() -> Result<(), LofError> {
     lof_lang::run_code(r#"// This is a comment"#)
 }

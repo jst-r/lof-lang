@@ -10,13 +10,32 @@ use crate::{
 #[derive(Default)]
 pub struct Resolver {
     scopes: Vec<BTreeMap<Rc<str>, bool>>,
+    curr_function_kind: FunctionKind,
     pub resolutions: BTreeMap<usize, usize>,
 }
+
+#[derive(Clone, Copy)]
+enum FunctionKind {
+    None,
+    Function,
+    Method,
+}
+
+impl Default for FunctionKind {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 impl Resolver {
     pub fn resolver_pass(&mut self, stmts: &[Stmt]) {
         for stmt in stmts {
             stmt.accept(self);
         }
+    }
+
+    fn get_scope_handle(&mut self) {
+        self.scopes.push(Default::default());
     }
 
     fn begin_scope(&mut self) {
@@ -62,7 +81,8 @@ impl Resolver {
         }
     }
 
-    fn resolve_function(&mut self, args: &[Token], body: &BoxExpr) {
+    fn resolve_function(&mut self, function_kind: FunctionKind, args: &[Token], body: &BoxExpr) {
+        let prev_f_kind = std::mem::replace(&mut self.curr_function_kind, function_kind);
         self.begin_scope();
         for arg in args {
             self.declare(arg);
@@ -71,6 +91,7 @@ impl Resolver {
 
         body.accept(self);
         self.end_scope();
+        self.curr_function_kind = prev_f_kind;
     }
 }
 
@@ -204,10 +225,10 @@ impl StmtVisitor for Resolver {
         self.declare(name);
         self.define(name);
 
-        self.resolve_function(args, body);
+        self.resolve_function(self.curr_function_kind, args, body);
     }
 
-    fn visit_class(&mut self, name: &Token, _methods: &[Stmt]) -> Self::ReturnType {
+    fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
         self.declare(name);
         self.define(name);
     }

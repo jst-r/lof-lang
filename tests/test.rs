@@ -15,8 +15,5 @@ fn class() -> Result<(), LofError> {
 
 #[test]
 fn comment() -> Result<(), LofError> {
-    lof_lang::run_code(
-        r#"// This is a comment
-    "#,
-    )
+    lof_lang::run_code(r#"// This is a comment"#)
 }

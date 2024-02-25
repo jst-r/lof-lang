@@ -11,7 +11,7 @@ pub enum RuntimeValue {
     Integer(isize),
     Float(f64),
     Bool(bool),
-    Function(Rc<dyn Callable>), // Functions are boxed to avoid bloating the enum size
+    Function(Rc<dyn Callable>),
     Class(Rc<Class>),
     Instance(Rc<RefCell<Instance>>),
     // those are to be removed when structs and enums are implemented

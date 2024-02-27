@@ -72,8 +72,6 @@ pub fn disassemble_operation_write(
         )?;
     }
 
-    write!(buffer, "\n")?;
-
     Ok(offset + 1 + n_operands)
 }
 

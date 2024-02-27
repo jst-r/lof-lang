@@ -8,12 +8,9 @@ fn main() {
     chunk.write_operand(const_offset, 1);
     chunk.write_op_code(OpCode::Return, 1);
 
-    let mut vm = VM {
-        chunk: chunk.clone(),
-        instruction_pointer: 0,
-    };
+    let mut vm = VM::new(chunk.clone());
 
-    dbg!(vm.interpret(chunk.clone()));
+    println!("{:?}", vm.interpret(chunk.clone()));
 
     // println!("{}", chunk.disassemble().unwrap());
 }

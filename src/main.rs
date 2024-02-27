@@ -1,4 +1,12 @@
+use lof_lang::virtual_machine::{Chunk, OpCode};
+
 fn main() {
-    // dbg!(lof_lang::parse_expression("1 + 2"));
-    // dbg!(lof_lang::run_expr("1+2"));
+    let mut chunk = Chunk::default();
+
+    let const_offset = chunk.add_constant(42.0);
+    chunk.write_op_code(OpCode::Constant, 1);
+    chunk.write_operand(const_offset, 1);
+    chunk.write_op_code(OpCode::Return, 1);
+
+    println!("{}", chunk.disassemble().unwrap());
 }

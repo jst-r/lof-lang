@@ -19,6 +19,7 @@ pub mod parser;
 pub mod scanner;
 pub mod statement;
 pub mod token;
+pub mod virtual_machine;
 pub mod visitor;
 
 pub fn parse_program(source: &str) -> Result<Vec<Stmt>, LofError> {

@@ -34,10 +34,6 @@ impl Resolver {
         }
     }
 
-    fn get_scope_handle(&mut self) {
-        self.scopes.push(Default::default());
-    }
-
     fn begin_scope(&mut self) {
         self.scopes.push(Default::default());
     }
@@ -240,7 +236,12 @@ impl StmtVisitor for Resolver {
         self.scopes.last_mut().unwrap().insert("this".into(), true);
 
         for method in methods {
-            let Stmt::Fn { name, params, body } = method else {
+            let Stmt::Fn {
+                name: _,
+                params,
+                body,
+            } = method
+            else {
                 panic!("Expected a method")
             };
 

@@ -9,8 +9,8 @@ use super::runtime::{
 pub fn wrap_native_fn<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult + 'static>(
     f: F,
 ) -> RuntimeValue {
-    let function = RuntimeValue::Function(Rc::new(NativeFunctionWrapper { function: f }));
-    function
+    
+    RuntimeValue::Function(Rc::new(NativeFunctionWrapper { function: f }))
 }
 
 pub fn get_function_name<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult + 'static>(

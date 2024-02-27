@@ -7,7 +7,7 @@ use super::{
     runtime::{
         callable::Callable,
         class::{self, InstanceTrait},
-        function::{self, Function},
+        function::{self},
         result::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeUnwind},
         value::RuntimeValue,
     },
@@ -490,8 +490,7 @@ impl StmtVisitor for Interpreter {
                 args: params.to_vec(),
                 body: body.clone(),
                 closure: self.environment.clone(),
-            }
-            .into();
+            };
 
             method_table.insert(name.lexeme.clone(), runtime_decl);
         }

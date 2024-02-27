@@ -56,12 +56,16 @@ impl VM {
                     let constant = self.read_constant();
                     self.push(constant);
                 }
+                OpCode::Negate => {
+                    let val = -self.pop();
+                    self.push(val);
+                }
             }
         }
     }
 
     fn push(&mut self, value: Value) {
-        self.stack[self.stack_top];
+        self.stack[self.stack_top] = value;
         self.stack_top += 1;
     }
 

@@ -7,6 +7,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 pub enum OpCode {
     Return,
     Constant,
+    Negate,
 }
 
 impl OpCode {
@@ -14,6 +15,7 @@ impl OpCode {
         match *self {
             OpCode::Return => 0,
             OpCode::Constant => 1,
+            OpCode::Negate => 0,
         }
     }
 }
@@ -26,6 +28,7 @@ impl Display for OpCode {
             match self {
                 OpCode::Return => "RETURN",
                 OpCode::Constant => "CONSTANT",
+                OpCode::Negate => "NEGATE",
             }
         )
     }

@@ -6,7 +6,8 @@ fn main() {
     let const_offset = chunk.add_constant(42.0);
     chunk.write_op_code(OpCode::Constant, 1);
     chunk.write_operand(const_offset, 1);
-    chunk.write_op_code(OpCode::Return, 1);
+    chunk.write_op_code(OpCode::Negate, 1);
+    chunk.write_op_code(OpCode::Return, 2);
 
     let mut vm = VM::new(chunk.clone());
 

@@ -176,6 +176,8 @@ impl Interpreter {
         };
 
         if callee.arity() != args.len() {
+            dbg!(callee.arity(), args.len());
+            dbg!(callee);
             panic!("invalid number of arguments")
         }
 

@@ -21,18 +21,28 @@ impl Class {
 }
 
 impl Callable for Class {
-    fn call(&self, _: &mut Interpreter, _: Vec<RuntimeValue>) -> RuntimeResult {
-        Ok(RuntimeValue::Instance(Rc::new(
+    fn call(&self, interpreter: &mut Interpreter, args: Vec<RuntimeValue>) -> RuntimeResult {
+        let instance: Rc<RefCell<Instance>> = Rc::new(
             Instance {
                 class: Rc::new(self.clone()),
                 fields: Default::default(),
             }
             .into(),
-        )))
+        );
+
+        if let Some(init) = self.find_method(&"init".into()) {
+            init.bind(instance.clone()).call(interpreter, args).unwrap();
+        }
+
+        Ok(RuntimeValue::Instance(instance))
     }
 
     fn arity(&self) -> usize {
-        0
+        if let Some(init) = self.find_method(&"init".into()) {
+            init.arity()
+        } else {
+            0
+        }
     }
 }
 

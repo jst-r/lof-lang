@@ -33,3 +33,4 @@ assert(b.hi() == "hi!", "");
 
 b.a = 1;
 assert(b.hasThis() == 1, "");
+

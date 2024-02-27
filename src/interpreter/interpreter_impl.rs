@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::BTreeMap, rc::Rc};
 
 use super::{
     environment::{EnvironmentTrait, WrappedEnv},
@@ -6,8 +6,8 @@ use super::{
     resolver::Resolver,
     runtime::{
         callable::Callable,
-        class::{self},
-        function,
+        class,
+        function::{self, Function},
         result::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeUnwind},
         value::RuntimeValue,
     },
@@ -456,12 +456,13 @@ impl StmtVisitor for Interpreter {
         args: &[Token],
         body: &Box<Expr>,
     ) -> Self::ReturnType {
-        let runtime_decl = Function(Rc::new(function::Function {
+        let runtime_decl = function::Function {
             name: name.clone(),
             args: args.into(),
             body: body.clone(),
             closure: self.environment.clone(),
-        }));
+        }
+        .into();
 
         self.environment.define(name.lexeme.clone(), runtime_decl);
 
@@ -471,7 +472,25 @@ impl StmtVisitor for Interpreter {
     fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
         self.environment.define(name.lexeme.clone(), Unit);
 
-        let class = RuntimeValue::Class(Rc::new(class::Class::new(name.clone())));
+        let mut method_table = BTreeMap::new();
+
+        for method in methods {
+            let Stmt::Fn { name, params, body } = method else {
+                panic!("Expected a funciton declaration")
+            };
+
+            let runtime_decl = function::Function {
+                name: name.clone(),
+                args: params.to_vec(),
+                body: body.clone(),
+                closure: self.environment.clone(),
+            }
+            .into();
+
+            method_table.insert(name.lexeme.clone(), runtime_decl);
+        }
+
+        let class = class::Class::new(name.clone(), method_table).into();
 
         self.environment.assign(name, class)?;
 

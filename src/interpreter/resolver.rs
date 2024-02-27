@@ -231,5 +231,13 @@ impl StmtVisitor for Resolver {
     fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
         self.declare(name);
         self.define(name);
+
+        for method in methods {
+            let Stmt::Fn { name, params, body } = method else {
+                panic!("Expected a method")
+            };
+
+            self.resolve_function(FunctionKind::Method, params, body)
+        }
     }
 }

@@ -3,6 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use super::{
     callable::Callable,
     class::{Class, Instance},
+    function::Function,
 };
 
 #[derive(Debug, Clone)]
@@ -17,4 +18,16 @@ pub enum RuntimeValue {
     // those are to be removed when structs and enums are implemented
     Range(isize, isize),
     Unit,
+}
+
+impl From<Function> for RuntimeValue {
+    fn from(value: Function) -> Self {
+        Self::Function(Rc::new(value))
+    }
+}
+
+impl From<Class> for RuntimeValue {
+    fn from(value: Class) -> Self {
+        Self::Class(Rc::new(value))
+    }
 }

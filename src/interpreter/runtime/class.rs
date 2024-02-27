@@ -11,11 +11,8 @@ pub struct Class {
 }
 
 impl Class {
-    pub fn new(name: Token) -> Self {
-        Class {
-            name,
-            methods: Default::default(),
-        }
+    pub fn new(name: Token, methods: BTreeMap<Rc<str>, RuntimeValue>) -> Self {
+        Class { name, methods }
     }
 
     pub fn find_method(&self, name: &Rc<str>) -> Option<&RuntimeValue> {

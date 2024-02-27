@@ -6,7 +6,7 @@ use super::{
     resolver::Resolver,
     runtime::{
         callable::Callable,
-        class::{self, Instance},
+        class::{self},
         function,
         result::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeUnwind},
         value::RuntimeValue,

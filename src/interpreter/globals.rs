@@ -3,7 +3,7 @@ use std::rc::Rc;
 use super::{
     builtins::{assert, get_function_name, time, wrap_native_fn},
     environment::{EnvironmentTrait, WrappedEnv},
-    runtime_value::{RuntimeResult, RuntimeValue},
+    runtime::{result::RuntimeResult, value::RuntimeValue},
 };
 
 pub fn define_globals(mut env: WrappedEnv) {

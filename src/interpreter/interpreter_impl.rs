@@ -4,8 +4,13 @@ use super::{
     environment::{EnvironmentTrait, WrappedEnv},
     globals::define_globals,
     resolver::Resolver,
-    runtime_type::{self, Callable, Class},
-    runtime_value::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeValue},
+    runtime::{
+        callable::Callable,
+        class::{self, Instance},
+        function,
+        result::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeUnwind},
+        value::RuntimeValue,
+    },
     Interpreter,
 };
 
@@ -390,7 +395,7 @@ impl ExprVisitor for Interpreter {
             None => Unit,
         };
 
-        Err(super::runtime_value::RuntimeUnwind::Return(value))
+        Err(RuntimeUnwind::Return(value))
     }
 
     fn visit_field_access(&mut self, object: &BoxExpr, name: &Token) -> Self::ReturnType {
@@ -451,7 +456,7 @@ impl StmtVisitor for Interpreter {
         args: &[Token],
         body: &Box<Expr>,
     ) -> Self::ReturnType {
-        let runtime_decl = Function(Rc::new(runtime_type::Function {
+        let runtime_decl = Function(Rc::new(function::Function {
             name: name.clone(),
             args: args.into(),
             body: body.clone(),
@@ -466,7 +471,7 @@ impl StmtVisitor for Interpreter {
     fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
         self.environment.define(name.lexeme.clone(), Unit);
 
-        let class = RuntimeValue::Class(Rc::new(Class::new(name.clone())));
+        let class = RuntimeValue::Class(Rc::new(class::Class::new(name.clone())));
 
         self.environment.assign(name, class)?;
 

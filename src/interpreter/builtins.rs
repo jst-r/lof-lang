@@ -1,14 +1,16 @@
 use std::rc::Rc;
 
-use super::{
-    runtime_type::NativeFunctionWrapper,
-    runtime_value::{RuntimeError, RuntimeResult, RuntimeValue},
+use super::runtime::{
+    function::NativeFunctionWrapper,
+    result::{RuntimeError, RuntimeResult},
+    value::RuntimeValue,
 };
 
 pub fn wrap_native_fn<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult + 'static>(
     f: F,
 ) -> RuntimeValue {
-    RuntimeValue::Function(Rc::new(NativeFunctionWrapper { function: f }))
+    let function = RuntimeValue::Function(Rc::new(NativeFunctionWrapper { function: f }));
+    function
 }
 
 pub fn get_function_name<const N: usize, F: Fn([RuntimeValue; N]) -> RuntimeResult + 'static>(

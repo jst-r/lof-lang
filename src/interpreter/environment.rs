@@ -1,8 +1,11 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use super::runtime_value::{RuntimeError, RuntimeResult, RuntimeValue};
-
 use crate::token::Token;
+
+use super::runtime::{
+    result::{RuntimeError, RuntimeResult},
+    value::RuntimeValue,
+};
 
 pub type WrappedEnv = Rc<RefCell<Environment>>;
 

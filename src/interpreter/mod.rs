@@ -3,8 +3,7 @@ pub mod environment;
 pub mod globals;
 pub mod interpreter_impl;
 pub mod resolver;
-pub mod runtime_type;
-pub mod runtime_value;
+pub mod runtime;
 
 use std::collections::BTreeMap;
 

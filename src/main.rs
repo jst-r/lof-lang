@@ -1,4 +1,4 @@
-use lof_lang::virtual_machine::{Chunk, OpCode};
+use lof_lang::virtual_machine::{chunk::Chunk, op_code::OpCode, vm::VM};
 
 fn main() {
     let mut chunk = Chunk::default();
@@ -8,5 +8,12 @@ fn main() {
     chunk.write_operand(const_offset, 1);
     chunk.write_op_code(OpCode::Return, 1);
 
-    println!("{}", chunk.disassemble().unwrap());
+    let mut vm = VM {
+        chunk: chunk.clone(),
+        instruction_pointer: 0,
+    };
+
+    dbg!(vm.interpret(chunk.clone()));
+
+    // println!("{}", chunk.disassemble().unwrap());
 }

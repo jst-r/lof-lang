@@ -1,4 +1,4 @@
-use lof_lang::{interpreter::runtime_value::RuntimeValue, LofError};
+use lof_lang::{interpreter::runtime::value::RuntimeValue, LofError};
 
 #[test]
 fn basic_e2e() -> Result<(), ()> {

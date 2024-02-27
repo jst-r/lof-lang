@@ -1,5 +1,5 @@
 use expression::{BoxExpr, ExprVisitor};
-use interpreter::runtime_value::{RuntimeUnwind, RuntimeValue};
+use interpreter::runtime::{result::RuntimeUnwind, value::RuntimeValue};
 use scanner::ScannerError;
 use thiserror::Error;
 
@@ -25,8 +25,7 @@ pub fn parse_program(source: &str) -> Result<Vec<Stmt>, LofError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens();
     let tokens: Vec<Token> = {
-        let tok_result: Result<Vec<Token>, ScannerError> =
-            tokens.iter().cloned().collect();
+        let tok_result: Result<Vec<Token>, ScannerError> = tokens.iter().cloned().collect();
         tok_result?
     };
 
@@ -40,8 +39,7 @@ pub fn parse_expression(source: &str) -> Result<BoxExpr, LofError> {
     let mut scanner = Scanner::new(source);
     let tokens = scanner.scan_tokens();
     let tokens: Vec<Token> = {
-        let tok_result: Result<Vec<Token>, ScannerError> =
-            tokens.iter().cloned().collect();
+        let tok_result: Result<Vec<Token>, ScannerError> = tokens.iter().cloned().collect();
         tok_result?
     };
 

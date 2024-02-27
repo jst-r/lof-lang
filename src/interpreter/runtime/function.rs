@@ -1,5 +1,6 @@
-use std::fmt::Debug;
+use std::cell::RefCell;
 use std::iter::zip;
+use std::{fmt::Debug, rc::Rc};
 
 use crate::{
     expression::BoxExpr,
@@ -11,6 +12,7 @@ use crate::{
     visitor::AcceptMut,
 };
 
+use super::class::Instance;
 use super::{
     callable::Callable,
     result::{RuntimeResult, RuntimeUnwind},
@@ -23,6 +25,20 @@ pub struct Function {
     pub closure: WrappedEnv,
     pub args: Vec<Token>,
     pub body: BoxExpr,
+}
+
+impl Function {
+    pub fn bind(&self, instance: Rc<RefCell<Instance>>) -> Self {
+        let mut env = self.closure.create_child();
+        env.define("this".into(), RuntimeValue::Instance(instance));
+
+        Function {
+            name: self.name.clone(),
+            closure: env,
+            args: self.args.clone(),
+            body: self.body.clone(),
+        }
+    }
 }
 
 impl Callable for Function {

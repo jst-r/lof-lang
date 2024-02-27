@@ -21,8 +21,15 @@ class HasMethods {
     hi() {
         return "hi!";
     }
+
+    hasThis() {
+        return this.a;
+    }
 }
 
 var b = HasMethods();
 
 assert(b.hi() == "hi!", "");
+
+b.a = 1;
+assert(b.hasThis() == 1, "");

@@ -59,6 +59,9 @@ pub enum Expr {
         name: Token,
         value: BoxExpr,
     },
+    This {
+        keyword: Token,
+    },
     Return {
         keyword: Token,
         value: Option<BoxExpr>,
@@ -125,6 +128,8 @@ where
         value: &BoxExpr,
     ) -> Self::ReturnType;
 
+    fn visit_this(&mut self, keyword: &Token) -> Self::ReturnType;
+
     fn visit(&mut self, expr: &BoxExpr) -> Self::ReturnType {
         match expr.as_ref() {
             Expr::Binary {
@@ -166,6 +171,7 @@ where
                 name,
                 value,
             } => self.visit_filed_set(object, name, value),
+            Expr::This { keyword } => self.visit_this(keyword),
         }
     }
 }

@@ -200,6 +200,10 @@ impl ExprVisitor for Resolver {
         value.accept(self);
         object.accept(self);
     }
+
+    fn visit_this(&mut self, keyword: &Token) -> Self::ReturnType {
+        self.resolve_local(keyword)
+    }
 }
 
 impl StmtVisitor for Resolver {
@@ -225,12 +229,15 @@ impl StmtVisitor for Resolver {
         self.declare(name);
         self.define(name);
 
-        self.resolve_function(self.curr_function_kind, args, body);
+        self.resolve_function(FunctionKind::Function, args, body);
     }
 
     fn visit_class(&mut self, name: &Token, methods: &[Stmt]) -> Self::ReturnType {
         self.declare(name);
         self.define(name);
+
+        self.begin_scope();
+        self.scopes.last_mut().unwrap().insert("this".into(), true);
 
         for method in methods {
             let Stmt::Fn { name, params, body } = method else {
@@ -239,5 +246,7 @@ impl StmtVisitor for Resolver {
 
             self.resolve_function(FunctionKind::Method, params, body)
         }
+
+        self.end_scope();
     }
 }

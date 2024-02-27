@@ -575,6 +575,12 @@ impl Parser {
             return wrap_expr(Expr::Group(expr));
         }
 
+        if self.matches([TokenKind::This]) {
+            return wrap_expr(Expr::This {
+                keyword: self.previous().clone(),
+            });
+        }
+
         Err(ParserError::ExpectedExpression(self.peek().clone()))
     }
 

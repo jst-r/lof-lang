@@ -1,21 +1,21 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use crate::{interpreter::Interpreter, token::Token};
 
-use super::{callable::Callable, result::RuntimeResult, value::RuntimeValue};
+use super::{callable::Callable, function::Function, result::RuntimeResult, value::RuntimeValue};
 
 #[derive(Debug, Clone)]
 pub struct Class {
     name: Token,
-    methods: BTreeMap<Rc<str>, RuntimeValue>,
+    methods: BTreeMap<Rc<str>, Function>,
 }
 
 impl Class {
-    pub fn new(name: Token, methods: BTreeMap<Rc<str>, RuntimeValue>) -> Self {
+    pub fn new(name: Token, methods: BTreeMap<Rc<str>, Function>) -> Self {
         Class { name, methods }
     }
 
-    pub fn find_method(&self, name: &Rc<str>) -> Option<&RuntimeValue> {
+    pub fn find_method(&self, name: &Rc<str>) -> Option<&Function> {
         self.methods.get(name)
     }
 }
@@ -42,21 +42,27 @@ pub struct Instance {
     fields: BTreeMap<Rc<str>, RuntimeValue>,
 }
 
-impl Instance {
-    pub fn get(&self, name: &Token) -> Option<RuntimeValue> {
+pub trait InstanceTrait {
+    fn get(&self, name: &Token) -> Option<RuntimeValue>;
+    fn set(&self, name: &Token, value: RuntimeValue);
+}
+
+impl InstanceTrait for Rc<RefCell<Instance>> {
+    fn get(&self, name: &Token) -> Option<RuntimeValue> {
         let name = &name.lexeme;
 
-        if let Some(field) = self.fields.get(name) {
+        if let Some(field) = self.borrow().fields.get(name) {
             return field.clone().into();
         }
-        if let Some(method) = self.class.find_method(name) {
-            return method.clone().into();
+        if let Some(method) = self.borrow().class.find_method(name) {
+            let method = method.bind(self.clone());
+            return Some(method.into());
         }
 
         None
     }
 
-    pub fn set(&mut self, name: &Token, value: RuntimeValue) {
-        self.fields.insert(name.lexeme.clone(), value);
+    fn set(&self, name: &Token, value: RuntimeValue) {
+        self.borrow_mut().fields.insert(name.lexeme.clone(), value);
     }
 }

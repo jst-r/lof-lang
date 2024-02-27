@@ -22,6 +22,7 @@ lazy_static! {
         ("return", TokenKind::Return),
         ("var", TokenKind::Var),
         ("const", TokenKind::Const),
+        ("this", TokenKind::This)
     ]);
 }
 

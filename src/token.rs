@@ -46,6 +46,7 @@ pub enum TokenKind {
     Return,
     Var,
     Const,
+    This,
 
     Eof,
 }

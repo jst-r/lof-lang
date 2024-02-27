@@ -6,7 +6,7 @@ use super::{
     resolver::Resolver,
     runtime::{
         callable::Callable,
-        class,
+        class::{self, InstanceTrait},
         function::{self, Function},
         result::{RuntimeError, RuntimeResult, RuntimeResultNoValue, RuntimeUnwind},
         value::RuntimeValue,
@@ -403,7 +403,7 @@ impl ExprVisitor for Interpreter {
             panic!("Only instances have fields")
         };
 
-        let opt_object = object.borrow().get(name);
+        let opt_object = object.get(name);
 
         match opt_object {
             Some(val) => val.clone().into(),
@@ -422,8 +422,12 @@ impl ExprVisitor for Interpreter {
         };
 
         let value = value.accept(self)?;
-        object.borrow_mut().set(name, value.clone());
+        object.set(name, value.clone());
         Ok(value)
+    }
+
+    fn visit_this(&mut self, keyword: &Token) -> Self::ReturnType {
+        self.look_up_variable(keyword)
     }
 }
 

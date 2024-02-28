@@ -10,9 +10,17 @@ pub struct Chunk {
     pub code: Vec<u8>,
     pub lines: Vec<usize>,
     pub constants: Vec<Value>,
+    pub name: Option<&'static str>,
 }
 
 impl Chunk {
+    pub fn new_named(name: &'static str) -> Self {
+        Self {
+            name: Some(name),
+            ..Default::default()
+        }
+    }
+
     pub fn write_op_code(&mut self, op: OpCode, line_number: usize) {
         self.code.push(op.into());
         self.lines.push(line_number);
@@ -28,10 +36,27 @@ impl Chunk {
         (self.constants.len() - 1) as u8
     }
 
+    pub fn write_operation<const NUM_OPERANDS: usize>(
+        &mut self,
+        op: OpCode,
+        operands: [u8; NUM_OPERANDS],
+        line_number: usize,
+    ) {
+        assert!(NUM_OPERANDS == op.num_operands());
+        self.write_op_code(op, line_number);
+
+        match op {
+            OpCode::Constant => self.write_operand(operands[0], line_number),
+            _ => {}
+        }
+    }
+
     pub fn disassemble(&self) -> Result<String, Box<dyn Error>> {
         let mut buffer = BufWriter::new(Vec::new());
 
         let mut offset = 0;
+
+        write!(&mut buffer, "{:=^50}", self.name.unwrap_or(""))?;
 
         while offset < self.code.len() {
             offset = disassemble_operation_write(self, offset, &mut buffer)?;

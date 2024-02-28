@@ -3,19 +3,22 @@ use std::fmt::Display;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive, IntoPrimitive)]
 pub enum OpCode {
     Return,
     Constant,
     Negate,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }
 
 impl OpCode {
-    pub fn num_operands(&self) -> usize {
+    pub const fn num_operands(&self) -> usize {
         match *self {
-            OpCode::Return => 0,
             OpCode::Constant => 1,
-            OpCode::Negate => 0,
+            _ => 0,
         }
     }
 }
@@ -29,6 +32,10 @@ impl Display for OpCode {
                 OpCode::Return => "RETURN",
                 OpCode::Constant => "CONSTANT",
                 OpCode::Negate => "NEGATE",
+                OpCode::Add => "ADD",
+                OpCode::Subtract => "SUBTRACT",
+                OpCode::Multiply => "MULTIPLY",
+                OpCode::Divide => "DIVIDE",
             }
         )
     }

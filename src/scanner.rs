@@ -126,7 +126,7 @@ impl<'a> Scanner<'a> {
             '"' => self.string(),
 
             '0'..='9' => self.number(),
-            'a'..='z' | 'A'..='Z' => self.identifier(),
+            'a'..='z' | 'A'..='Z' | '_' => self.identifier(),
 
             _ => self.add_error(ScannerError::UnexpectedToken),
         };
@@ -222,7 +222,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn is_digit(c: char) -> bool {
-        c.is_numeric()
+        c.is_digit(10)
     }
 
     fn is_identifier_char(c: char) -> bool {
@@ -260,7 +260,9 @@ impl<'a> Scanner<'a> {
     }
 
     fn identifier(&mut self) {
-        while self.peek().map_or(false, Scanner::is_identifier_char) {
+        while self.peek().map_or(false, |c| {
+            Scanner::is_identifier_char(c) || Scanner::is_digit(c)
+        }) {
             self.advance();
         }
 

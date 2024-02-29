@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use std::{collections::BTreeMap, rc::Rc, str::CharIndices};
 use thiserror::Error;
 
-use crate::token::{LiteralValue, Token, TokenKind, TokenStruct};
+use crate::compiler::token::{LiteralValue, Token, TokenKind, TokenStruct};
 
 lazy_static! {
     static ref KEYWORDS: BTreeMap<&'static str, TokenKind> = BTreeMap::from([

@@ -50,7 +50,7 @@ pub type TokenSlice<'a> = &'a [Result<Token, ScannerError>];
 impl<'a> Scanner<'a> {
     pub fn new<S: Into<&'a str>>(source: S) -> Self {
         let source = source.into();
-        Scanner {
+        let mut scanner = Scanner {
             source,
             chars: source.char_indices(),
             tokens: vec![],
@@ -58,36 +58,40 @@ impl<'a> Scanner<'a> {
             current: 0,
             line: 0,
             current_id: 0,
-        }
+        };
+
+        scanner.scan_tokens();
+
+        scanner.tokens.reverse();
+
+        scanner
     }
 
-    #[allow(dead_code)]
-    pub fn reset<S: Into<&'a str>>(&'a mut self, source: S) {
-        let source = source.into();
-
-        self.source = source;
-        self.chars = source.char_indices();
-        self.tokens = vec![];
-        self.start = 0;
-        self.current = 0;
-        self.line = 0;
-        self.current_id = 0;
+    pub fn next(&mut self) -> Result<Token, ScannerError> {
+        self.tokens.pop().unwrap_or(self.make_eof())
     }
 
-    pub fn scan_tokens(&'a mut self) -> TokenSlice<'a> {
-        while !self.is_at_end() {
-            self.start = self.current;
-            self.scan_token();
-        }
-        self.current_id += 1;
-        self.tokens.push(Ok(Rc::new(TokenStruct {
+    pub fn peek(&self) -> Result<Token, ScannerError> {
+        self.tokens.last().cloned().unwrap_or(self.make_eof())
+    }
+
+    fn make_eof(&self) -> Result<Rc<TokenStruct>, ScannerError> {
+        Ok(Rc::new(TokenStruct {
             kind: TokenKind::Eof,
             lexeme: Rc::from("\0"),
             literal: LiteralValue::None,
             line: self.line,
             id: self.current_id,
-        })));
-        self.tokens.as_slice()
+        }))
+    }
+
+    fn scan_tokens(&mut self) {
+        while !self.is_at_end() {
+            self.start = self.current;
+            self.scan_token();
+        }
+        self.current_id += 1;
+        self.tokens.push(self.make_eof());
     }
 
     fn scan_token(&mut self) {
@@ -112,7 +116,7 @@ impl<'a> Scanner<'a> {
             '>' => self.add_token_lookahead('=', TokenKind::GreaterEqual, TokenKind::Greater),
             '/' => {
                 if self.matches('/') {
-                    while self.peek() != Some('\n') && !self.is_at_end() {
+                    while self.peek_char() != Some('\n') && !self.is_at_end() {
                         self.advance();
                     }
                 } else {
@@ -142,7 +146,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn peek(&self) -> Option<char> {
+    fn peek_char(&self) -> Option<char> {
         self.chars.clone().next().map(|t| t.1)
     }
 
@@ -158,7 +162,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn matches(&mut self, expected: char) -> bool {
-        match self.peek() {
+        match self.peek_char() {
             None => false,
             Some(c) => {
                 if c == expected {
@@ -204,7 +208,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn string(&mut self) {
-        while self.peek() != Some('"') && !self.is_at_end() {
+        while self.peek_char() != Some('"') && !self.is_at_end() {
             self.advance();
         }
         if self.is_at_end() {
@@ -230,7 +234,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn consume_digits(&mut self) {
-        while self.peek().map_or(false, Scanner::is_digit) {
+        while self.peek_char().map_or(false, Scanner::is_digit) {
             self.advance();
         }
     }
@@ -240,7 +244,7 @@ impl<'a> Scanner<'a> {
 
         self.consume_digits();
 
-        if self.peek() == Some('.') && self.peek_next().map_or(false, Scanner::is_digit) {
+        if self.peek_char() == Some('.') && self.peek_next().map_or(false, Scanner::is_digit) {
             is_float = true;
             self.advance();
             self.consume_digits();
@@ -260,7 +264,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn identifier(&mut self) {
-        while self.peek().map_or(false, |c| {
+        while self.peek_char().map_or(false, |c| {
             Scanner::is_identifier_char(c) || Scanner::is_digit(c)
         }) {
             self.advance();

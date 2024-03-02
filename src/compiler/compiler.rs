@@ -1,3 +1,5 @@
+use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
+
 use crate::virtual_machine::{chunk::Chunk, op_code::OpCode, value::Value};
 
 use super::{
@@ -12,18 +14,26 @@ struct Compiler<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> {
     tokens: TokenIterator,
 }
 
+#[repr(u8)]
+#[derive(IntoPrimitive, TryFromPrimitive)]
 pub enum Precedence {
     None,
-    ASSIGNMENT, // =
-    OR,         // or
-    AND,        // and
-    ,   // == !=
-    COMPARISON, // < > <= >=
-    TERM,       // + -
-    FACTOR,     // * /
-    UNARY,      // ! -
-    CALL,       // . ()
-    PRIMARY,
+    Assignment, // =
+    Or,         // or
+    And,        // and
+    Equality,   // == !=
+    Comparison, // < > <= >=
+    Term,       // + -
+    Factor,     // * /
+    Unary,      // ! -
+    Call,       // () .
+    Primary,
+}
+
+impl Precedence {
+    fn next(self) -> Self {
+        (u8::from(self) + 1u8).try_into().unwrap()
+    }
 }
 
 impl<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> Compiler<TokenIterator> {
@@ -57,10 +67,10 @@ impl<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> Compiler<Token
         todo!()
     }
 
-    fn parse_precedence(&mut self) {}
+    fn parse_precedence(&mut self, precedence: Precedence) {}
 
     fn expression(&mut self) {
-        todo!()
+        self.parse_precedence(Precedence::Assignment)
     }
 
     fn grouping(&mut self) {
@@ -68,10 +78,14 @@ impl<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> Compiler<Token
         self.consume(TokenKind::RightParen);
     }
 
+    fn binary(&mut self) {
+        let operator_kind = self.previous.kind;
+    }
+
     fn unary(&mut self) {
         let operator_kind = self.previous.kind;
 
-        self.expression();
+        self.parse_precedence(Precedence::Unary);
 
         match operator_kind {
             TokenKind::Minus => self.emit_op_code(OpCode::Negate),

@@ -3,15 +3,15 @@ use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 use crate::virtual_machine::{chunk::Chunk, op_code::OpCode, value::Value};
 
 use super::{
-    scanner::ScannerError,
+    scanner::{Scanner, ScannerError, ScannerResult},
     token::{Token, TokenKind},
 };
 
-struct Compiler<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> {
-    current: Token,
-    previous: Token,
+struct Compiler<'source> {
+    current: Token<'source>,
+    previous: Token<'source>,
     compiling_chunk: Chunk,
-    tokens: TokenIterator,
+    scanner: Scanner<'source>,
 }
 
 #[repr(u8)]
@@ -36,12 +36,12 @@ impl Precedence {
     }
 }
 
-impl<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> Compiler<TokenIterator> {
+impl<'source> Compiler<'source> {
     pub fn new() -> Self {
         todo!()
     }
 
-    pub fn compile(&mut self, source: &str) {
+    pub fn compile(&mut self, source: &'source str) {
         self.advance();
         self.expression();
         self.consume(TokenKind::Eof);
@@ -51,13 +51,14 @@ impl<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> Compiler<Token
         self.previous = self.current.clone();
 
         loop {
-            match self.scan_token() {
+            let next = self.scanner.next();
+            match next {
                 Ok(current) => {
                     self.current = current;
                     break;
                 }
                 Err(err) => {
-                    self.errorAtCurrent(err);
+                    self.error_at_current(err);
                 }
             }
         }
@@ -98,13 +99,7 @@ impl<TokenIterator: Iterator<Item = Result<Token, ScannerError>>> Compiler<Token
         self.emit_constant(value);
     }
 
-    fn scan_token(&mut self) -> Result<Token, ScannerError> {
-        self.tokens
-            .next()
-            .unwrap_or(Err(ScannerError::UnexpectedToken))
-    }
-
-    fn errorAtCurrent(&self, err: ScannerError) {
+    fn error_at_current(&self, err: ScannerError) {
         todo!()
     }
 

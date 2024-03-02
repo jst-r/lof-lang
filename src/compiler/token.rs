@@ -60,12 +60,10 @@ pub enum LiteralValue {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct TokenStruct {
+pub struct Token<'source> {
     pub kind: TokenKind,
-    pub lexeme: Rc<str>,
+    pub lexeme: &'source str,
     pub literal: LiteralValue,
     pub line: usize,
     pub id: usize,
 }
-
-pub type Token = Rc<TokenStruct>;

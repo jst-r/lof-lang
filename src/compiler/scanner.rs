@@ -1,8 +1,8 @@
 use lazy_static::lazy_static;
-use std::{collections::BTreeMap, rc::Rc, str::CharIndices};
+use std::{collections::BTreeMap, str::CharIndices};
 use thiserror::Error;
 
-use crate::compiler::token::{LiteralValue, Token, TokenKind, TokenStruct};
+use crate::compiler::token::{LiteralValue, Token, TokenKind};
 
 lazy_static! {
     static ref KEYWORDS: BTreeMap<&'static str, TokenKind> = BTreeMap::from([
@@ -35,20 +35,20 @@ pub enum ScannerError {
 }
 
 #[derive(Debug)]
-pub struct Scanner<'a> {
-    source: &'a str,
-    chars: CharIndices<'a>,
-    tokens: Vec<Result<Token, ScannerError>>,
+pub struct Scanner<'source> {
+    source: &'source str,
+    chars: CharIndices<'source>,
+    tokens: Vec<Result<Token<'source>, ScannerError>>,
     start: usize,
     current: usize,
     line: usize,
     current_id: usize,
 }
 
-pub type TokenSlice<'a> = &'a [Result<Token, ScannerError>];
+pub type ScannerResult<'source> = Result<Token<'source>, ScannerError>;
 
-impl<'a> Scanner<'a> {
-    pub fn new<S: Into<&'a str>>(source: S) -> Self {
+impl<'source> Scanner<'source> {
+    pub fn new<S: Into<&'source str>>(source: S) -> Self {
         let source = source.into();
         let mut scanner = Scanner {
             source,
@@ -67,22 +67,22 @@ impl<'a> Scanner<'a> {
         scanner
     }
 
-    pub fn next(&mut self) -> Result<Token, ScannerError> {
+    pub fn next(&mut self) -> ScannerResult<'source> {
         self.tokens.pop().unwrap_or(self.make_eof())
     }
 
-    pub fn peek(&self) -> Result<Token, ScannerError> {
+    pub fn peek(&self) -> ScannerResult<'source> {
         self.tokens.last().cloned().unwrap_or(self.make_eof())
     }
 
-    fn make_eof(&self) -> Result<Rc<TokenStruct>, ScannerError> {
-        Ok(Rc::new(TokenStruct {
+    fn make_eof(&self) -> ScannerResult<'static> {
+        Ok(Token {
             kind: TokenKind::Eof,
-            lexeme: Rc::from("\0"),
+            lexeme: "\0",
             literal: LiteralValue::None,
             line: self.line,
             id: self.current_id,
-        }))
+        })
     }
 
     fn scan_tokens(&mut self) {
@@ -91,7 +91,8 @@ impl<'a> Scanner<'a> {
             self.scan_token();
         }
         self.current_id += 1;
-        self.tokens.push(self.make_eof());
+        let eof = self.make_eof();
+        self.tokens.push(eof);
     }
 
     fn scan_token(&mut self) {
@@ -156,7 +157,7 @@ impl<'a> Scanner<'a> {
         temp.next().map(|t| t.1)
     }
 
-    fn current_slice(&self) -> &'a str {
+    fn current_slice(&self) -> &'source str {
         let byte_slice = &self.source.as_bytes()[self.start..self.current];
         std::str::from_utf8(byte_slice).unwrap()
     }
@@ -190,13 +191,13 @@ impl<'a> Scanner<'a> {
     fn add_literal_token(&mut self, kind: TokenKind, value: LiteralValue) {
         let lexeme = self.current_slice().into();
         self.current_id += 1;
-        self.tokens.push(Ok(Rc::new(TokenStruct {
+        self.tokens.push(Ok(Token {
             kind,
             lexeme,
             literal: value,
             line: self.line,
             id: self.current_id,
-        })))
+        }))
     }
 
     fn add_error(&mut self, err: ScannerError) {

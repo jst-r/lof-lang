@@ -14,6 +14,10 @@ pub struct Chunk {
 }
 
 impl Chunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn new_named(name: &'static str) -> Self {
         Self {
             name: Some(name),

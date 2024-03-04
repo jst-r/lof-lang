@@ -1,17 +1,20 @@
-use lof_lang::virtual_machine::{chunk::Chunk, op_code::OpCode, vm::VM};
+use lof_lang::{
+    compiler::{scanner::Scanner, token::TokenKind},
+    virtual_machine::{chunk::Chunk, op_code::OpCode, vm::VM},
+};
 
 fn main() {
-    let mut chunk = Chunk::default();
+    let source = "1 + 2 * 3";
 
-    let const_offset = chunk.add_constant(42.0);
+    let mut scanner = Scanner::new(source);
 
-    chunk.write_operation(OpCode::Constant, [const_offset], 1);
-    chunk.write_operation(OpCode::Negate, [], 1);
-    chunk.write_operation(OpCode::Return, [], 1);
+    loop {
+        let token = scanner.next().unwrap();
 
-    let mut vm = VM::new(chunk.clone());
+        dbg!(&token);
 
-    println!("{:?}", vm.interpret(chunk.clone()));
-
-    // println!("{}", chunk.disassemble().unwrap());
+        if token.kind == TokenKind::Eof {
+            break;
+        }
+    }
 }

@@ -47,8 +47,6 @@ pub enum TokenKind {
     Var,
     Const,
     This,
-
-    Eof,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]

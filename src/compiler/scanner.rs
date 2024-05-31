@@ -32,25 +32,32 @@ pub enum ScannerError {
     UnexpectedToken,
     #[error("unterminated string")]
     UnterminatedString,
+    #[error("eof")]
+    Eof,
 }
 
+pub type ScannerResult<'source> = Result<Token<'source>, ScannerError>;
+
 #[derive(Debug)]
-pub struct Scanner<'source> {
+pub struct ScannerBuilder<'source> {
+    pub tokens: Vec<ScannerResult<'source>>,
     source: &'source str,
     chars: CharIndices<'source>,
-    tokens: Vec<Result<Token<'source>, ScannerError>>,
     start: usize,
     current: usize,
     line: usize,
     current_id: usize,
 }
 
-pub type ScannerResult<'source> = Result<Token<'source>, ScannerError>;
+pub struct Scanner<'source> {
+    tokens: Vec<ScannerResult<'source>>,
+    source: &'source str,
+}
 
 impl<'source> Scanner<'source> {
     pub fn new<S: Into<&'source str>>(source: S) -> Self {
         let source = source.into();
-        let mut scanner = Scanner {
+        let mut builder = ScannerBuilder {
             source,
             chars: source.char_indices(),
             tokens: vec![],
@@ -60,29 +67,31 @@ impl<'source> Scanner<'source> {
             current_id: 0,
         };
 
-        scanner.scan_tokens();
+        builder.scan_tokens();
 
-        scanner.tokens.reverse();
+        builder.tokens.reverse();
 
-        scanner
+        Self {
+            tokens: builder.tokens,
+            source,
+        }
     }
 
     pub fn next(&mut self) -> ScannerResult<'source> {
-        self.tokens.pop().unwrap_or(self.make_eof())
+        self.tokens.pop().unwrap_or(Err(ScannerError::Eof))
     }
 
     pub fn peek(&self) -> ScannerResult<'source> {
-        self.tokens.last().cloned().unwrap_or(self.make_eof())
+        self.tokens
+            .last()
+            .cloned()
+            .unwrap_or(Err(ScannerError::Eof))
     }
+}
 
+impl<'source> ScannerBuilder<'source> {
     fn make_eof(&self) -> ScannerResult<'static> {
-        Ok(Token {
-            kind: TokenKind::Eof,
-            lexeme: "\0",
-            literal: LiteralValue::None,
-            line: self.line,
-            id: self.current_id,
-        })
+        Err(ScannerError::Eof)
     }
 
     fn scan_tokens(&mut self) {
@@ -235,7 +244,7 @@ impl<'source> Scanner<'source> {
     }
 
     fn consume_digits(&mut self) {
-        while self.peek_char().map_or(false, Scanner::is_digit) {
+        while self.peek_char().map_or(false, ScannerBuilder::is_digit) {
             self.advance();
         }
     }
@@ -245,7 +254,8 @@ impl<'source> Scanner<'source> {
 
         self.consume_digits();
 
-        if self.peek_char() == Some('.') && self.peek_next().map_or(false, Scanner::is_digit) {
+        if self.peek_char() == Some('.') && self.peek_next().map_or(false, ScannerBuilder::is_digit)
+        {
             is_float = true;
             self.advance();
             self.consume_digits();
@@ -266,7 +276,7 @@ impl<'source> Scanner<'source> {
 
     fn identifier(&mut self) {
         while self.peek_char().map_or(false, |c| {
-            Scanner::is_identifier_char(c) || Scanner::is_digit(c)
+            ScannerBuilder::is_identifier_char(c) || ScannerBuilder::is_digit(c)
         }) {
             self.advance();
         }
@@ -278,5 +288,37 @@ impl<'source> Scanner<'source> {
             None => self.add_token(TokenKind::Identifier),
             Some(tk) => self.add_token(*tk),
         };
+    }
+}
+
+mod test {
+    use crate::compiler::{scanner::ScannerError, token::TokenKind};
+
+    use super::{Scanner, ScannerResult};
+
+    fn assert_kind(token: ScannerResult, kind: TokenKind) {
+        assert_eq!(token.unwrap().kind, kind);
+    }
+
+    fn assert_eof(token: ScannerResult) {
+        assert_eq!(token.unwrap_err(), ScannerError::Eof);
+    }
+
+    #[test]
+    fn a_few_tokens() {
+        let mut scanner = Scanner::new("1 + 2 * 3");
+
+        for kind in [
+            TokenKind::Literal,
+            TokenKind::Plus,
+            TokenKind::Literal,
+            TokenKind::Star,
+            TokenKind::Literal,
+        ] {
+            assert_kind(scanner.peek(), kind);
+            assert_kind(scanner.next(), kind);
+        }
+
+        assert_eof(scanner.next());
     }
 }

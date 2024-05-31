@@ -1,5 +1,8 @@
 use lof_lang::{
-    compiler::{scanner::Scanner, token::TokenKind},
+    compiler::{
+        scanner::{Scanner, ScannerError},
+        token::TokenKind,
+    },
     virtual_machine::{chunk::Chunk, op_code::OpCode, vm::VM},
 };
 
@@ -9,11 +12,11 @@ fn main() {
     let mut scanner = Scanner::new(source);
 
     loop {
-        let token = scanner.next().unwrap();
+        let token = scanner.next();
 
         dbg!(&token);
 
-        if token.kind == TokenKind::Eof {
+        if let Err(ScannerError::Eof) = token {
             break;
         }
     }

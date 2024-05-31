@@ -5,7 +5,7 @@ use std::io::Write;
 use super::op_code::OpCode;
 use super::value::Value;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Chunk {
     pub code: Vec<u8>,
     pub lines: Vec<usize>,

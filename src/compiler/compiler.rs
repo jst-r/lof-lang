@@ -86,12 +86,16 @@ impl<'source> Compiler<'source> {
 
     pub fn compile(&mut self) -> Result<(), CompilerError> {
         self.expression()?;
-        self.consume(TokenKind::Eof);
+        // self.consume(TokenKind::Eof);
 
         Ok(())
     }
 
-    fn consume(&mut self, token: TokenKind) {
+    fn peek(&mut self) -> Result<Token, CompilerError> {
+        Ok(self.scanner.peek()?)
+    }
+
+    fn consume(&mut self, kind: TokenKind) {
         todo!()
     }
 
@@ -100,10 +104,10 @@ impl<'source> Compiler<'source> {
 
         ParseRule::from_token(&lhs)
             .prefix
-            .ok_or(CompilerError::ExpectedExpression)?(self)?;
+            .ok_or(CompilerError::UnexpectedEOF)?(self)?;
 
         loop {
-            let infix_rule = ParseRule::from_token(&self.previous).infix.unwrap();
+            let infix_rule = ParseRule::from_token(&self.peek()?).infix.unwrap();
             infix_rule(self)?;
         }
 
@@ -122,7 +126,7 @@ impl<'source> Compiler<'source> {
     }
 
     fn binary(&mut self) -> Result<(), CompilerError> {
-        let operator_kind = self.previous.kind;
+        let operator_kind = self.scanner.peek()?.kind;
 
         let rule = ParseRule::from_kind(operator_kind);
 
@@ -141,7 +145,7 @@ impl<'source> Compiler<'source> {
     }
 
     fn unary(&mut self) -> Result<(), CompilerError> {
-        let operator_kind = self.previous.kind;
+        let operator_kind = self.peek()?.kind;
 
         self.parse_precedence(Precedence::Unary)?;
 
@@ -154,7 +158,8 @@ impl<'source> Compiler<'source> {
     }
 
     fn number(&mut self) -> Result<(), CompilerError> {
-        let value = self.previous.lexeme.parse().unwrap();
+        dbg!(self.peek());
+        let value = self.peek()?.lexeme.parse().unwrap();
         self.emit_constant(value);
 
         Ok(())
@@ -165,12 +170,14 @@ impl<'source> Compiler<'source> {
     }
 
     fn emit_op_code(&mut self, op: OpCode) {
-        self.compiling_chunk.write_op_code(op, self.previous.line)
+        let line = self.peek().unwrap().line;
+        self.compiling_chunk.write_op_code(op, line)
     }
 
     fn emit_operand(&mut self, operand: u8) {
-        self.compiling_chunk
-            .write_operand(operand, self.previous.line)
+        let line = self.peek().unwrap().line;
+
+        self.compiling_chunk.write_operand(operand, line)
     }
 
     fn emit_op_code_operand(&mut self, op: OpCode, operand: u8) {
@@ -188,14 +195,33 @@ impl<'source> Compiler<'source> {
     }
 }
 
-enum CompilerError {
-    ExpectedExpression,
+#[derive(Clone, Copy, Debug)]
+pub enum CompilerError {
+    UnexpectedEOF,
     InvalidOperator,
     ScannerError(ScannerError),
 }
 
 impl From<ScannerError> for CompilerError {
     fn from(value: ScannerError) -> Self {
-        Self::ScannerError(value)
+        match value {
+            ScannerError::Eof => Self::UnexpectedEOF,
+            _ => Self::ScannerError(value),
+        }
+    }
+}
+
+mod test {
+    use crate::{compiler::scanner::Scanner, virtual_machine::chunk::disassemble_operation};
+
+    #[test]
+    fn the_very_basics() {
+        let mut compiler = super::Compiler::new(Scanner::new("1 + 2 * 3"));
+
+        compiler.compile().unwrap();
+
+        let chunk = compiler.compiling_chunk;
+
+        dbg!(chunk);
     }
 }
